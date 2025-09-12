@@ -10,8 +10,8 @@ object GameState {
     private val maxPlayers = 4
     private val idGen = AtomicInteger(1)
 
-    fun addPlayer(name: String): Boolean {
-        if (players.size >= maxPlayers) return false
+    fun addPlayer(name: String): Player? {
+        if (players.size >= maxPlayers) return null
 
         val player = Player(idGen.getAndIncrement(), name)
         players.add(player)
@@ -19,7 +19,7 @@ object GameState {
         if (players.size == 1)
             activeIndex = 0
 
-        return true
+        return player
     }
 
     fun getState(): GameSnapshot {

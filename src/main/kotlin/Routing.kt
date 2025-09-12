@@ -23,11 +23,11 @@ fun Application.configureRouting() {
         post("/join") {
             val request = call.receive<PlayerJoinRequest>()
             val playerAdded = GameState.addPlayer(request.name)
-            if (!playerAdded) {
-                call.respond(HttpStatusCode.BadRequest, "Maksymalna liczba graczy została osiągnięta")
+            if (playerAdded == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Maksymalna liczba graczy została osiągnięta"))
                 return@post
             }
-            call.respond(HttpStatusCode.OK, "Dodano gracza o nazwie ${request.name}")
+            call.respond(playerAdded)
         }
 
         get("/state") {
