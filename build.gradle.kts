@@ -8,7 +8,8 @@ group = "com.example"
 version = "0.0.1"
 
 application {
-    mainClass = "io.ktor.server.netty.EngineMain"
+    mainClass.set("com.example.ApplicationKt")
+    //mainClass = "io.ktor.server.netty.EngineMain"
 }
 repositories {
     mavenCentral()
