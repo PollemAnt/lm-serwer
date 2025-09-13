@@ -1,11 +1,14 @@
 package com.example.state
 
+import com.example.models.Card
+import com.example.models.DeckFactory
 import com.example.models.GameSnapshot
 import com.example.models.Player
 import java.util.concurrent.atomic.AtomicInteger
 
 object GameState {
     private val players = mutableListOf<Player>()
+    private var deck: MutableList<Card> = mutableListOf()
     private var activeIndex = 0
     private val maxPlayers = 4
     private val idGen = AtomicInteger(1)
@@ -20,6 +23,23 @@ object GameState {
             activeIndex = 0
 
         return player
+    }
+
+    fun startGame(){
+        deck = DeckFactory.createDeck().shuffled().toMutableList()
+        activeIndex = 0
+        for (player in players) {
+            drawCardForPlayer(player.id)
+        }
+    }
+
+    fun getPlayers(): List<Player> = players
+
+    fun drawCardForPlayer(playerId: Int): Card? {
+        val player = players.find { it.id == playerId } ?: return null
+        val card = deck.removeFirstOrNull() ?: return null
+        player.hand.add(card)
+        return card
     }
 
     fun getState(): GameSnapshot {
@@ -42,6 +62,12 @@ object GameState {
 
             MoveResult.Success(msg, activeIndex)
         }
+    }
+
+    fun resetGame() {
+        players.clear()
+        deck = DeckFactory.createDeck().shuffled().toMutableList()
+        activeIndex = 0
     }
 
     sealed interface MoveResult {

@@ -28,6 +28,7 @@ fun Application.configureRouting() {
                 return@post
             }
             call.respond(playerAdded)
+
         }
 
         get("/state") {
@@ -37,9 +38,6 @@ fun Application.configureRouting() {
 
         post("/move") {
             val request = call.receive<MoveRequest>()
-            //call.respond(GameState.makeMove(request.playerId))
-            //call.respondText(Json.encodeToString(GameState.makeMove(request.playerId)), ContentType.Application.Json)
-
 
             val result = GameState.makeMove(request.playerId)
             when (result) {
@@ -47,8 +45,37 @@ fun Application.configureRouting() {
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
             }
         }
+
+        post("/draw") {
+            val request = call.receive<DrawRequest>()
+            val card = GameState.drawCardForPlayer(request.playerId)
+            if (card == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Brak kart w talii albo gracza"))
+            } else {
+                call.respond(card)
+            }
+        }
+
+        get("/hand/{playerId}") {
+            val playerId = call.parameters["playerId"]?.toIntOrNull()
+            if (playerId == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Niepoprawne ID gracza"))
+                return@get
+            }
+
+            val player = GameState.getPlayers().find { it.id == playerId }
+            if (player == null) {
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
+                return@get
+            }
+
+            call.respond(player.hand)
+        }
     }
 }
+
+@Serializable
+data class DrawRequest(val playerId: Int)
 
 @Serializable
 data class MoveRequest(val playerId: Int)
