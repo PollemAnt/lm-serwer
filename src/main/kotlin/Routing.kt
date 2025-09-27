@@ -72,6 +72,11 @@ fun Application.configureRouting() {
 
             call.respond(player.hand)
         }
+
+        get("/reset") {
+            GameState.resetGame()
+            call.respond(HttpStatusCode.OK)
+        }
     }
 }
 
