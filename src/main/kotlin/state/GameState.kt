@@ -10,7 +10,7 @@ object GameState {
     private val players = mutableListOf<Player>()
     private var deck: MutableList<Card> = mutableListOf()
     private var activeIndex = 0
-    private val maxPlayers = 4
+    private val maxPlayers = 2
     private val idGen = AtomicInteger(1)
 
     fun addPlayer(name: String): Player? {
@@ -21,6 +21,10 @@ object GameState {
 
         if (players.size == 1)
             activeIndex = 0
+
+        if (players.size == maxPlayers) {
+            startGame()
+        }
 
         return player
     }
@@ -44,7 +48,7 @@ object GameState {
 
     fun getState(): GameSnapshot {
         val activeId = if (players.isNotEmpty()) players[activeIndex].id else null
-        return GameSnapshot(players.toList(), activeId)
+        return GameSnapshot(players.toList(), deck , activeId)
     }
 
     fun makeMove(playerId: Int): MoveResult {

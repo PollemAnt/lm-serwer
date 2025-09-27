@@ -1,18 +1,19 @@
 package com.example
 
-import com.example.models.Player
 import com.example.models.PlayerJoinRequest
 import com.example.state.GameState
 import com.example.state.GameState.MoveResult
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import kotlinx.serialization.json.Json
-import io.ktor.server.request.*
+import io.ktor.server.application.Application
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 fun Application.configureRouting() {
     routing {
