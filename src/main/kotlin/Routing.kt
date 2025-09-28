@@ -37,6 +37,7 @@ fun Application.configureRouting() {
             call.respondText(json, ContentType.Application.Json)
         }
 
+
         post("/move") {
             val request = call.receive<MoveRequest>()
 
@@ -76,6 +77,22 @@ fun Application.configureRouting() {
         get("/reset") {
             GameState.resetGame()
             call.respond(HttpStatusCode.OK)
+        }
+
+        get("/player/{playerId}") {
+            val playerId = call.parameters["playerId"]?.toIntOrNull()
+            if (playerId == null) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Niepoprawne ID gracza"))
+                return@get
+            }
+
+            val player = GameState.getPlayers().find { it.id == playerId }
+            if (player == null) {
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
+                return@get
+            }
+
+            call.respond(player)
         }
     }
 }

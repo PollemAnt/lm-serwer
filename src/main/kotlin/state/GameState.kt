@@ -11,7 +11,7 @@ object GameState {
     private var deck: MutableList<Card> = mutableListOf()
     private var activeIndex = 0
     private val maxPlayers = 2
-    private val idGen = AtomicInteger(1)
+    private val idGen = AtomicInteger(0)
 
     fun addPlayer(name: String): Player? {
         if (players.size >= maxPlayers) return null
