@@ -72,6 +72,7 @@ object GameState {
         players.clear()
         deck = DeckFactory.createDeck().shuffled().toMutableList()
         activeIndex = 0
+        idGen.set(0)
     }
 
     sealed interface MoveResult {
