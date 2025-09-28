@@ -8,6 +8,7 @@ import io.ktor.server.netty.EngineMain
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.websocket.WebSockets
 
 fun main(args: Array<String>) {
     EngineMain.main(args)
@@ -22,6 +23,12 @@ fun Application.module() {
 
     install(ContentNegotiation) {
         json()
+    }
+    install(WebSockets){
+        pingPeriodMillis = 15000
+        timeoutMillis = 15000
+        maxFrameSize = Long.MAX_VALUE
+        masking = false
     }
 
     configureRouting()

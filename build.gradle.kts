@@ -24,7 +24,10 @@ dependencies {
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
 
+    implementation(libs.ktor.server.websockets)
 
+    // Logging
+    implementation(libs.logback.classic)
     implementation(libs.ktor.server.cors)
     implementation(libs.ktor.server.sessions)
     implementation(libs.ktor.server.core)

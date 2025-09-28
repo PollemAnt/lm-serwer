@@ -1,5 +1,6 @@
 package com.example
 
+import com.example.com.example.ConnectionManager
 import com.example.models.PlayerJoinRequest
 import com.example.state.GameState
 import com.example.state.GameState.MoveResult
@@ -12,8 +13,13 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+
 
 fun Application.configureRouting() {
     routing {
@@ -21,13 +27,37 @@ fun Application.configureRouting() {
             call.respondText("Serwer List Miłosny działa!")
         }
 
+        webSocket("/updates") {
+            println("Nowe połączenie ${this.hashCode()}")
+
+            ConnectionManager.addConnection(this)
+
+            try {
+                incoming.consumeEach { frame ->
+                    if (frame is Frame.Text) {
+                        val text = frame.readText()
+                        println("Od klienta: $text")
+                    }
+                }
+            } finally {
+                println("Rozloczono ${this.hashCode()}")
+                ConnectionManager.removeConnection(this)
+            }
+        }
+
+
         post("/join") {
             val request = call.receive<PlayerJoinRequest>()
             val playerAdded = GameState.addPlayer(request.name)
             if (playerAdded == null) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Maksymalna liczba graczy została osiągnięta"))
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Maksymalna liczba graczy została osiągnięta")
+                )
                 return@post
             }
+            ConnectionManager.broadcast("Gracz ${playerAdded.name} dołączył do gry")
+
             call.respond(playerAdded)
 
         }
@@ -43,7 +73,13 @@ fun Application.configureRouting() {
 
             val result = GameState.makeMove(request.playerId)
             when (result) {
-                is MoveResult.Success -> call.respond(MoveResponse(result.message, result.nextPlayer))
+                is MoveResult.Success -> call.respond(
+                    MoveResponse(
+                        result.message,
+                        result.nextPlayer
+                    )
+                )
+
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
             }
         }
@@ -52,7 +88,10 @@ fun Application.configureRouting() {
             val request = call.receive<DrawRequest>()
             val card = GameState.drawCardForPlayer(request.playerId)
             if (card == null) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Brak kart w talii albo gracza"))
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Brak kart w talii albo gracza")
+                )
             } else {
                 call.respond(card)
             }
@@ -96,6 +135,7 @@ fun Application.configureRouting() {
         }
     }
 }
+
 
 @Serializable
 data class DrawRequest(val playerId: Int)
