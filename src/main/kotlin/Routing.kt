@@ -1,6 +1,7 @@
 package com.example
 
 import com.example.com.example.ConnectionManager
+import com.example.models.GameEvent
 import com.example.models.PlayerJoinRequest
 import com.example.state.GameState
 import com.example.state.GameState.MoveResult
@@ -56,7 +57,7 @@ fun Application.configureRouting() {
                 )
                 return@post
             }
-            ConnectionManager.broadcast("Gracz ${playerAdded.name} dołączył do gry")
+            ConnectionManager.broadcastEvent(GameEvent("player_joined", playerAdded))
 
             call.respond(playerAdded)
 
