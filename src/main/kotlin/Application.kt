@@ -9,6 +9,7 @@ import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.websocket.WebSockets
+import kotlinx.serialization.json.Json
 
 fun main(args: Array<String>) {
     EngineMain.main(args)
@@ -22,9 +23,12 @@ fun Application.module() {
     }
 
     install(ContentNegotiation) {
-        json()
+        json(Json {
+            classDiscriminator = "type"
+        })
     }
-    install(WebSockets){
+
+    install(WebSockets) {
         pingPeriodMillis = 15000
         timeoutMillis = 15000
         maxFrameSize = Long.MAX_VALUE
