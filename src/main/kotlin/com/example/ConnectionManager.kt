@@ -1,6 +1,6 @@
 package com.example.com.example
 
-import com.example.models.GameEvent
+import com.example.models.GameEventBase
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
 import kotlinx.coroutines.sync.Mutex
@@ -24,7 +24,7 @@ object ConnectionManager {
         }
     }
 
-    suspend fun broadcastEvent(event: GameEvent) {
+    suspend fun broadcastEvent(event: GameEventBase) {
         val json = Json.encodeToString(event)
         mutex.withLock {
             connections.forEach { session ->

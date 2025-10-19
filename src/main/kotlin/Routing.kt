@@ -1,7 +1,9 @@
 package com.example
 
 import com.example.com.example.ConnectionManager
-import com.example.models.GameEvent
+import com.example.models.Card
+import com.example.models.CardPlayedEvent
+import com.example.models.PlayerJoinEvent
 import com.example.models.PlayerJoinRequest
 import com.example.state.GameState
 import com.example.state.GameState.MoveResult
@@ -50,16 +52,16 @@ fun Application.configureRouting() {
         post("/join") {
             val request = call.receive<PlayerJoinRequest>()
             val playerAdded = GameState.addPlayer(request.name)
-            if (playerAdded == null) {
+
+            if (playerAdded != null) {
+                ConnectionManager.broadcastEvent(PlayerJoinEvent(player = playerAdded))
+                call.respond(playerAdded)
+            } else {
                 call.respond(
                     HttpStatusCode.BadRequest,
                     mapOf("error" to "Maksymalna liczba graczy została osiągnięta")
                 )
-                return@post
             }
-            ConnectionManager.broadcastEvent(GameEvent("player_joined", playerAdded))
-
-            call.respond(playerAdded)
 
         }
 
@@ -74,15 +76,21 @@ fun Application.configureRouting() {
 
             val result = GameState.makeMove(request.playerId)
             when (result) {
-                is MoveResult.Success -> call.respond(
-                    MoveResponse(
-                        result.message,
-                        result.nextPlayer
+                is MoveResult.Success -> {
+                    call.respond(
+                        MoveResponse(
+                            result.message,
+                            result.nextPlayer
+                        )
                     )
-                )
+                    ConnectionManager.broadcastEvent(
+                        CardPlayedEvent(playerId = request.playerId, card = request.card, targetPlayerId = request.targetPlayerId)
+                    )
+                }
 
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
             }
+
         }
 
         post("/draw") {
@@ -142,7 +150,7 @@ fun Application.configureRouting() {
 data class DrawRequest(val playerId: Int)
 
 @Serializable
-data class MoveRequest(val playerId: Int)
+data class MoveRequest(val playerId: Int, val card: Card, val targetPlayerId: Int)
 
 @Serializable
 data class MoveResponse(val ok: String, val nextPlayerId: Int?)
