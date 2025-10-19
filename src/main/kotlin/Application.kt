@@ -1,5 +1,7 @@
 package com.example
 
+import io.ktor.http.ContentType
+import io.ktor.serialization.kotlinx.KotlinxSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -9,6 +11,7 @@ import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.websocket.WebSockets
+import kotlinx.serialization.json.Json
 
 fun main(args: Array<String>) {
     EngineMain.main(args)
@@ -22,9 +25,14 @@ fun Application.module() {
     }
 
     install(ContentNegotiation) {
+        register(ContentType.Text.Html, KotlinxSerializationConverter(Json {
+            prettyPrint = true
+            isLenient = true
+            ignoreUnknownKeys = true
+        }))
         json()
     }
-    install(WebSockets){
+    install(WebSockets) {
         pingPeriodMillis = 15000
         timeoutMillis = 15000
         maxFrameSize = Long.MAX_VALUE
