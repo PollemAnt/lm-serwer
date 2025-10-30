@@ -43,7 +43,7 @@ object GameState {
     fun drawCardForPlayer(playerId: Int): Card? {
         val player = players.find { it.id == playerId } ?: return null
         val card = deck.removeFirstOrNull() ?: return null
-        player.hand.add(card)
+        addCardToHand(player,card)
         return card
     }
 
@@ -77,12 +77,28 @@ object GameState {
     private fun playTheCard(request: MoveRequest): Boolean {
         val player = players[request.playerId]
 
-        player.hand.remove(request.card)
-        player.playedCards.add(request.card)
+        removeCardFromHand(player, request.card)
+
+        addCardToPlayed(player, request.card)
 
         drawCardForPlayer(request.playerId)
 
         return resolveCardEffect(request)
+    }
+
+    private fun addCardToPlayed(player: Player, card: Card) {
+        player.copy(playedCards = player.playedCards + card)
+    }
+
+    private fun addCardToHand(player: Player, card: Card) {
+        player.copy(hand = player.hand + card)
+    }
+
+    private fun removeCardFromHand(
+        player: Player,
+        card: Card
+    ) {
+        player.copy(hand = player.hand.filter { it != card })
     }
 
     private fun resolveCardEffect(request: MoveRequest): Boolean {
@@ -134,28 +150,28 @@ object GameState {
 
             5 -> {
                 // ksiaze
-                opponent?.let {
+                /*opponent?.let {
                     val discardedCard = it.hand.removeFirstOrNull()
                     if (discardedCard != null) {
                         println("Gracz ${it.name} odrzucił kartę ${discardedCard.name} i dobrał nową.")
                         drawCardForPlayer(it.id)
                     }
-                }
+                }*/
             }
 
             6 -> {
                 println("Gracz ${currentPlayer.name} zagrał kanclerza.")
 
-                // Krok 1: Gracz dobiera dwie dodatkowe karty z talii.
+               /* // Krok 1: Gracz dobiera dwie dodatkowe karty z talii.
                 val firstExtraCard = deck.removeFirstOrNull()
                 val secondExtraCard = deck.removeFirstOrNull()
 
                 // Krok 2: Dodaj nowe karty do ręki gracza, jeśli zostały dobrane.
                 if (firstExtraCard != null) {
-                    currentPlayer.hand.add(firstExtraCard)
+                    addCardToHand(currentPlayer, firstExtraCard)
                 }
                 if (secondExtraCard != null) {
-                    currentPlayer.hand.add(secondExtraCard)
+                    addCardToHand(currentPlayer, secondExtraCard)
                 }
 
                 // Krok 3: W tym momencie gracz ma w ręku więcej niż jedną kartę.
@@ -172,19 +188,16 @@ object GameState {
                 // Aktywnym graczem pozostaje currentPlayer, dopóki nie dokończy swojego ruchu (wybierając kartę).
                 // Logika zmiany tury w `makeMove` musi zostać dostosowana, aby to obsłużyć.
 
-                //return false
+                //return false*/
             }
 
             7 -> {
                 opponent?.let {
                     val playerHand = currentPlayer.hand
-                    val opponentHand = it.hand
-
                     val tempHand = playerHand.toMutableList()
-                    playerHand.clear()
-                    playerHand.addAll(opponentHand)
-                    opponentHand.clear()
-                    opponentHand.addAll(tempHand)
+
+                    currentPlayer.copy(hand = it.hand)
+                    it.copy(hand = tempHand)
 
                     println("Gracze ${currentPlayer.name} i ${it.name} zamienili się kartami.")
                 }
