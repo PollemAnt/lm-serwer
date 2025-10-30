@@ -19,7 +19,7 @@ data class GameEvent(
 data class CardPlayedEvent(
     val playerId: Int,
     val card: Card,
-    val targetPlayerId: Int
+    val targetPlayerId: Int? = null
 ) : GameEventBase
 
 

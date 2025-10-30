@@ -74,7 +74,7 @@ fun Application.configureRouting() {
         post("/move") {
             val request = call.receive<MoveRequest>()
 
-            val result = GameState.makeMove(request.playerId)
+            val result = GameState.makeMove(request)
             when (result) {
                 is MoveResult.Success -> {
                     call.respond(
@@ -150,7 +150,7 @@ fun Application.configureRouting() {
 data class DrawRequest(val playerId: Int)
 
 @Serializable
-data class MoveRequest(val playerId: Int, val card: Card, val targetPlayerId: Int)
+data class MoveRequest(val playerId: Int, val card: Card, val targetPlayerId: Int?)
 
 @Serializable
 data class MoveResponse(val ok: String, val nextPlayerId: Int?)
