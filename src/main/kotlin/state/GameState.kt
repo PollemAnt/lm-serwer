@@ -33,18 +33,23 @@ object GameState {
     fun startGame() {
         deck = DeckFactory.createDeck().shuffled().toMutableList()
         activeIndex = 0
-        for (player in players) {
-            drawCardForPlayer(player.id)
+       players.forEach { player ->
+           drawCardForPlayer(player.id)
+       }
+        if(players.isNotEmpty()){
+            drawCardForPlayer(players[activeIndex].id)
         }
     }
 
     fun getPlayers(): List<Player> = players
 
-    fun drawCardForPlayer(playerId: Int): Card? {
-        val player = players.find { it.id == playerId } ?: return null
-        val card = deck.removeFirstOrNull() ?: return null
-        addCardToHand(player,card)
-        return card
+    fun drawCardForPlayer(playerId: Int) {
+        val player = players.find { it.id == playerId }
+        val card = deck.removeFirstOrNull()
+
+        if (card != null && player != null) {
+            addCardToHand(player,card)
+        }
     }
 
     fun getState(): GameSnapshot {
@@ -68,6 +73,7 @@ object GameState {
             val msg = "Gracz ${activePlayer.name} wykonał ruch"
             if (moveCompleted) {
                 activeIndex = (activeIndex + 1) % players.size
+                drawCardForPlayer(players[activeIndex].id)
             }
 
             MoveResult.Success(msg, activeIndex)
@@ -87,18 +93,28 @@ object GameState {
     }
 
     private fun addCardToPlayed(player: Player, card: Card) {
-        player.copy(playedCards = player.playedCards + card)
+        val playerIndex = players.indexOfFirst { it.id == player.id }
+        if (playerIndex != -1) {
+            players[playerIndex] = player.copy(playedCards = player.playedCards + card)
+        }
     }
 
     private fun addCardToHand(player: Player, card: Card) {
-        player.copy(hand = player.hand + card)
+        val playerIndex = players.indexOfFirst { it.id == player.id }
+        if (playerIndex != -1) {
+            players[playerIndex] = player.copy(hand = player.hand + card)
+        }
+
     }
 
     private fun removeCardFromHand(
         player: Player,
         card: Card
     ) {
-        player.copy(hand = player.hand.filter { it != card })
+        val playerIndex = players.indexOfFirst { it.id == player.id }
+        if (playerIndex != -1) {
+            players[playerIndex] = player.copy(hand = player.hand - card)
+        }
     }
 
     private fun resolveCardEffect(request: MoveRequest): Boolean {
@@ -162,33 +178,33 @@ object GameState {
             6 -> {
                 println("Gracz ${currentPlayer.name} zagrał kanclerza.")
 
-               /* // Krok 1: Gracz dobiera dwie dodatkowe karty z talii.
-                val firstExtraCard = deck.removeFirstOrNull()
-                val secondExtraCard = deck.removeFirstOrNull()
+                /* // Krok 1: Gracz dobiera dwie dodatkowe karty z talii.
+                 val firstExtraCard = deck.removeFirstOrNull()
+                 val secondExtraCard = deck.removeFirstOrNull()
 
-                // Krok 2: Dodaj nowe karty do ręki gracza, jeśli zostały dobrane.
-                if (firstExtraCard != null) {
-                    addCardToHand(currentPlayer, firstExtraCard)
-                }
-                if (secondExtraCard != null) {
-                    addCardToHand(currentPlayer, secondExtraCard)
-                }
+                 // Krok 2: Dodaj nowe karty do ręki gracza, jeśli zostały dobrane.
+                 if (firstExtraCard != null) {
+                     addCardToHand(currentPlayer, firstExtraCard)
+                 }
+                 if (secondExtraCard != null) {
+                     addCardToHand(currentPlayer, secondExtraCard)
+                 }
 
-                // Krok 3: W tym momencie gracz ma w ręku więcej niż jedną kartę.
-                // Gra musi poczekać, aż gracz wybierze jedną z nich, a resztę odrzuci.
-                // To jest kluczowy moment - stan gry staje się "oczekujący na decyzję gracza".
+                 // Krok 3: W tym momencie gracz ma w ręku więcej niż jedną kartę.
+                 // Gra musi poczekać, aż gracz wybierze jedną z nich, a resztę odrzuci.
+                 // To jest kluczowy moment - stan gry staje się "oczekujący na decyzję gracza".
 
 
 
-                // Tutaj powinniśmy wysłać do klienta informację, że musi dokonać wyboru.
-                // Poniższy println symuluje tę akcję.
-                println("Gracz ${currentPlayer.name} musi teraz wybrać jedną kartę do pozostawienia w ręce z: ${currentPlayer.hand.joinToString { it.name }}")
+                 // Tutaj powinniśmy wysłać do klienta informację, że musi dokonać wyboru.
+                 // Poniższy println symuluje tę akcję.
+                 println("Gracz ${currentPlayer.name} musi teraz wybrać jedną kartę do pozostawienia w ręce z: ${currentPlayer.hand.joinToString { it.name }}")
 
-                // WAŻNE: W tym miejscu nie zmieniamy tury gracza!
-                // Aktywnym graczem pozostaje currentPlayer, dopóki nie dokończy swojego ruchu (wybierając kartę).
-                // Logika zmiany tury w `makeMove` musi zostać dostosowana, aby to obsłużyć.
+                 // WAŻNE: W tym miejscu nie zmieniamy tury gracza!
+                 // Aktywnym graczem pozostaje currentPlayer, dopóki nie dokończy swojego ruchu (wybierając kartę).
+                 // Logika zmiany tury w `makeMove` musi zostać dostosowana, aby to obsłużyć.
 
-                //return false*/
+                 //return false*/
             }
 
             7 -> {
