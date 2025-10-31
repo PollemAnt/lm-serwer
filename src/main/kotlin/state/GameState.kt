@@ -132,10 +132,10 @@ object GameState {
 
         removeCardFromHand(player, request.card)
 
-        val playerAfterRemove = players.find { it.id == request.playerId }
-        println("[DEBUG] Po removeCardFromHand - ręka: ${playerAfterRemove?.hand}")
+        val playerAfterRemove = players.find { it.id == request.playerId } ?: player
+        println("[DEBUG] Po removeCardFromHand - ręka: ${playerAfterRemove.hand}")
 
-        addCardToPlayed(player, request.card)
+        addCardToPlayed(playerAfterRemove, request.card)
 
         val finalPlayer = players.find { it.id == request.playerId }
         println("[DEBUG] FINAL - ręka: ${finalPlayer?.hand}")
