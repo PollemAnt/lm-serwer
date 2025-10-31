@@ -118,18 +118,37 @@ object GameState {
     }
 
     private fun playTheCard(request: MoveRequest): Boolean {
+
+        println("=== DEBUG playTheCard START ===")
+        println("[DEBUG] Request: playerId=${request.playerId}, card=${request.card}")
+
         println("[ACTION] Zagrywanie karty: ${request.card.name}")
         val player = players.find { it.id == request.playerId }
             ?: return false // Zabezpieczenie, gdyby gracz zniknął
 
+        println("[DEBUG] Gracz przed zmianami: ${player.name}")
+        println("[DEBUG] Ręka przed: ${player.hand}")
+        println("[DEBUG] Zagrane przed: ${player.playedCards}")
+
         removeCardFromHand(player, request.card)
+
+        val playerAfterRemove = players.find { it.id == request.playerId }
+        println("[DEBUG] Po removeCardFromHand - ręka: ${playerAfterRemove?.hand}")
+
         addCardToPlayed(player, request.card)
+
+        val finalPlayer = players.find { it.id == request.playerId }
+        println("[DEBUG] FINAL - ręka: ${finalPlayer?.hand}")
+        println("[DEBUG] FINAL - zagrane: ${finalPlayer?.playedCards}")
+        println("=== DEBUG playTheCard END ===\n")
 
         println("[ACTION] Przetwarzanie efektu karty...")
         return resolveCardEffect(request)
     }
 
     private fun addCardToPlayed(player: Player, card: Card) {
+        println("=== DEBUG addCardToPlayed START ===")
+        println("=== $player ===")
         val playerIndex = players.indexOfFirst { it.id == player.id }
         if (playerIndex != -1) {
             println("[STATE] Dodawanie karty ${card.name} do zagranych przez gracza ${player.name}")
@@ -149,17 +168,26 @@ object GameState {
         player: Player,
         card: Card
     ) {
+        println("=== DEBUG removeCardFromHand START ===")
+        println("=== $player ===")
         val playerIndex = players.indexOfFirst { it.id == player.id }
         if (playerIndex != -1) {
             println("[STATE] Usuwanie karty ${card.name} z ręki gracza ${player.name}")
+            println("[DEBUG] Przed aktualizacją - ręka: ${players[playerIndex].hand.map { it.name }}")
+            //val newHand = player.hand - card
 
-            val newHand = player.hand - card
+            val newHand = player.hand.toMutableList().apply {
+                removeAll { it.id == card.id }
+            }
             println("[STATE] Removing card: $card")
             println("[STATE] Old hand: ${player.hand}")
             println("[STATE] New hand: $newHand")
 
             players[playerIndex] = player.copy(hand = newHand)
+
+            println("[VERIFY] Ręka po aktualizacji: ${players[playerIndex].hand}")
         }
+        println("=== DEBUG removeCardFromHand END ===")
     }
 
     private fun resolveCardEffect(request: MoveRequest): Boolean {
