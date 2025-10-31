@@ -84,10 +84,7 @@ object GameState {
         val player = players[request.playerId]
 
         removeCardFromHand(player, request.card)
-
         addCardToPlayed(player, request.card)
-
-        drawCardForPlayer(request.playerId)
 
         return resolveCardEffect(request)
     }
@@ -104,7 +101,6 @@ object GameState {
         if (playerIndex != -1) {
             players[playerIndex] = player.copy(hand = player.hand + card)
         }
-
     }
 
     private fun removeCardFromHand(
