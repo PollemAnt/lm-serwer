@@ -15,15 +15,26 @@ object GameState {
     private val idGen = AtomicInteger(0)
 
     fun addPlayer(name: String): Player? {
-        if (players.size >= maxPlayers) return null
+        println("---")
+        println("[ACTION] Próba dodania gracza: $name")
+
+        if (players.size >= maxPlayers) {
+            println("[ERROR] Nie można dodać gracza. Osiągnięto maksymalną liczbę graczy ($maxPlayers).")
+            return null
+        }
 
         val player = Player(idGen.getAndIncrement(), name)
         players.add(player)
+        println("[STATE] Dodano gracza: ${player.name} (ID: ${player.id}). Liczba graczy: ${players.size}")
 
-        if (players.size == 1)
+        if (players.size == 1) {
             activeIndex = 0
+            println("[STATE] Ustawiono aktywnego gracza na pozycję 0 (ID: ${players[activeIndex].id}).")
+        }
+
 
         if (players.size == maxPlayers) {
+            println("[ACTION] Osiągnięto maksymalną liczbę graczy. Rozpoczynanie gry...")
             startGame()
         }
 
@@ -31,14 +42,22 @@ object GameState {
     }
 
     fun startGame() {
+        println("---")
+        println("[GAME] Rozpoczęcie gry...")
         deck = DeckFactory.createDeck().shuffled().toMutableList()
+        println("[GAME] Stworzono i potasowano talię. Liczba kart: ${deck.size}")
         activeIndex = 0
-       players.forEach { player ->
-           drawCardForPlayer(player.id)
-       }
+        println("[GAME] Ustawiono aktywnego gracza na pozycję 0.")
+
+        players.forEach { player ->
+            println("[ACTION] Dobieranie karty startowej dla gracza: ${player.name}")
+            drawCardForPlayer(player.id)
+        }
         if(players.isNotEmpty()){
+            println("[ACTION] Dobieranie drugiej karty dla aktywnego gracza: ${players[activeIndex].name}")
             drawCardForPlayer(players[activeIndex].id)
         }
+        println("[GAME] Gra rozpoczęta. Aktywny gracz: ${players[activeIndex].name}, karty na ręce: ${players[activeIndex].hand.joinToString { it.name }}")
     }
 
     fun getPlayers(): List<Player> = players
@@ -48,7 +67,11 @@ object GameState {
         val card = deck.removeFirstOrNull()
 
         if (card != null && player != null) {
+            println("[ACTION] Gracz ${player.name} dobiera kartę: ${card.name}. Pozostało kart w talii: ${deck.size}")
             addCardToHand(player,card)
+        } else {
+            if (player == null) println("[WARNING] Nie znaleziono gracza o ID: $playerId")
+            if (card == null) println("[WARNING] Talia jest pusta. Nie można dobrać karty.")
         }
     }
 
@@ -58,22 +81,36 @@ object GameState {
     }
 
     fun makeMove(request: MoveRequest): MoveResult {
+        println("---")
+        println("[ACTION] Próba wykonania ruchu: Gracz ID ${request.playerId} zagrywa kartę ${request.card.name}")
+
         if (players.isEmpty()) {
+            println("[ERROR] Nie można wykonać ruchu, ponieważ nie ma graczy w grze.")
             return MoveResult.Error("Brak graczy")
         }
 
         val activePlayer = players[activeIndex]
+        println("[CHECK] Oczekiwany ruch gracza: ${activePlayer.name} (ID: ${activePlayer.id})")
 
         return if (activePlayer.id != request.playerId) {
+            println("[ERROR] Ruch odrzucony. Nie jest to tura gracza o ID ${request.playerId}.")
             MoveResult.Error("Nie twoja tura")
         } else {
+            println("[SUCCESS] Tura gracza ${activePlayer.name} potwierdzona.")
 
             val moveCompleted = playTheCard(request)
+            println("[STATE] Efekt karty przetworzony. Czy ruch został zakończony?: $moveCompleted")
 
-            val msg = "Gracz ${activePlayer.name} wykonał ruch"
+            val msg = "Gracz ${activePlayer.name} wykonał ruch kartą ${request.card.name}"
             if (moveCompleted) {
+                val previousActivePlayerName = players[activeIndex].name
                 activeIndex = (activeIndex + 1) % players.size
-                drawCardForPlayer(players[activeIndex].id)
+                val nextActivePlayer = players[activeIndex]
+                println("[STATE] Ruch zakończony. Poprzedni gracz: $previousActivePlayerName. Następny gracz: ${nextActivePlayer.name} (ID: ${nextActivePlayer.id})")
+                println("[ACTION] Dobieranie karty dla następnego gracza...")
+                drawCardForPlayer(nextActivePlayer.id)
+            } else {
+                println("[STATE] Ruch nie został zakończony. Gracz ${activePlayer.name} musi wykonać dodatkową akcję. Tura nie zostaje zmieniona.")
             }
 
             MoveResult.Success(msg, activeIndex)
@@ -81,17 +118,21 @@ object GameState {
     }
 
     private fun playTheCard(request: MoveRequest): Boolean {
-        val player = players[request.playerId]
+        println("[ACTION] Zagrywanie karty: ${request.card.name}")
+        val player = players.find { it.id == request.playerId }
+            ?: return false // Zabezpieczenie, gdyby gracz zniknął
 
         removeCardFromHand(player, request.card)
         addCardToPlayed(player, request.card)
 
+        println("[ACTION] Przetwarzanie efektu karty...")
         return resolveCardEffect(request)
     }
 
     private fun addCardToPlayed(player: Player, card: Card) {
         val playerIndex = players.indexOfFirst { it.id == player.id }
         if (playerIndex != -1) {
+            println("[STATE] Dodawanie karty ${card.name} do zagranych przez gracza ${player.name}")
             players[playerIndex] = player.copy(playedCards = player.playedCards + card)
         }
     }
@@ -99,6 +140,7 @@ object GameState {
     private fun addCardToHand(player: Player, card: Card) {
         val playerIndex = players.indexOfFirst { it.id == player.id }
         if (playerIndex != -1) {
+            println("[STATE] Dodawanie karty ${card.name} do ręki gracza ${player.name}")
             players[playerIndex] = player.copy(hand = player.hand + card)
         }
     }
@@ -109,6 +151,7 @@ object GameState {
     ) {
         val playerIndex = players.indexOfFirst { it.id == player.id }
         if (playerIndex != -1) {
+            println("[STATE] Usuwanie karty ${card.name} z ręki gracza ${player.name}")
             players[playerIndex] = player.copy(hand = player.hand - card)
         }
     }
