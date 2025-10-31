@@ -152,7 +152,13 @@ object GameState {
         val playerIndex = players.indexOfFirst { it.id == player.id }
         if (playerIndex != -1) {
             println("[STATE] Usuwanie karty ${card.name} z ręki gracza ${player.name}")
-            players[playerIndex] = player.copy(hand = player.hand - card)
+
+            val newHand = player.hand - card
+            println("[STATE] Removing card: $card")
+            println("[STATE] Old hand: ${player.hand}")
+            println("[STATE] New hand: $newHand")
+
+            players[playerIndex] = player.copy(hand = newHand)
         }
     }
 
