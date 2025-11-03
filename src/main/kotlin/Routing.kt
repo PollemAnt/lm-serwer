@@ -3,10 +3,13 @@ package com.example
 import com.example.com.example.ConnectionManager
 import com.example.models.Card
 import com.example.models.CardPlayedEvent
+import com.example.models.ChancellorChoiceResponse
+import com.example.models.CompleteChancellorRequest
+import com.example.models.MoveResponse
 import com.example.models.PlayerJoinEvent
 import com.example.models.PlayerJoinRequest
 import com.example.state.GameState
-import com.example.state.GameState.MoveResult
+import com.example.models.MoveResult
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -79,18 +82,62 @@ fun Application.configureRouting() {
                 is MoveResult.Success -> {
                     call.respond(
                         MoveResponse(
-                            result.message,
-                            result.nextPlayer
+                            result.messageToAll,
+                            result.nextPlayerId
                         )
                     )
                     ConnectionManager.broadcastEvent(
-                        CardPlayedEvent(playerId = request.playerId, card = request.card, targetPlayerId = request.targetPlayerId)
+                        CardPlayedEvent(
+                            playerId = request.playerId,
+                            card = request.card,
+                            targetPlayerId = request.targetPlayerId
+                        )
                     )
                 }
 
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
-            }
 
+                is MoveResult.ChancellorChoice -> {
+                    call.respond(
+                        ChancellorChoiceResponse(
+                            message = result.message,
+                            availableCards = result.availableCards,
+                            nextPlayer = result.nextPlayerId
+                        )
+                    )
+                    /*// Możesz też wysłać event do wszystkich klientów
+                    ConnectionManager.broadcastEvent(
+                        ChancellorChoiceMadeEvent(
+                            playerId = request.playerId,
+                            availableCards = result.availableCards
+                        )
+                    )*/
+                }
+            }
+        }
+
+        post("/complete_chancellor") {
+            val request = call.receive<CompleteChancellorRequest>()
+
+            val result = GameState.completeChancellorMove(request.playerId, request.cardToKeep)
+            when (result) {
+                is MoveResult.Success -> {
+                    call.respond(
+                        MoveResponse(
+                            result.messageToAll,
+                            result.nextPlayerId
+                        )
+                    )
+                    /*ConnectionManager.broadcastEvent(
+                        ChancellorCompletedEvent(
+                            playerId = request.playerId,
+                            keptCard = request.cardToKeep
+                        )
+                    )*/
+                }
+                is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
+                else -> call.respond(HttpStatusCode.BadRequest, "Nieoczekiwany wynik")
+            }
         }
 
         post("/draw") {
@@ -150,10 +197,8 @@ fun Application.configureRouting() {
 data class DrawRequest(val playerId: Int)
 
 @Serializable
-data class MoveRequest(val playerId: Int, val card: Card, val targetPlayerId: Int?)
+data class MoveRequest(val playerId: Int, val card: Card, val targetPlayerId: Int?, val guessCardNumber: Int?)
 
-@Serializable
-data class MoveResponse(val ok: String, val nextPlayerId: Int?)
 
 @Serializable
 data class ErrorResponse(val error: String)
