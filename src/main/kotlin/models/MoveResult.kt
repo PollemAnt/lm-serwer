@@ -22,13 +22,18 @@ sealed interface MoveResult {
 @Serializable
 data class MoveResponse(val ok: String, val nextPlayerId: Int?)
 
+@Serializable
 sealed class MoveFeedback {
+
+    @Serializable
     data class Standard(val message: String) : MoveFeedback()
 
+    @Serializable
     data class SpyPlayed(
         val spyPlayerId: Int
     ) : MoveFeedback()
 
+    @Serializable
     data class GuardPlayed(
         val guessingPlayerId: Int,
         val targetPlayerId: Int,
@@ -36,12 +41,14 @@ sealed class MoveFeedback {
         val wasCorrect: Boolean
     ) : MoveFeedback()
 
+    @Serializable
     data class PriestPlayed(
         val viewingPlayerId: Int,
         val targetPlayerId: Int,
         val revealedCardNumber: Int
     ) : MoveFeedback()
 
+    @Serializable
     data class BaronPlayed(
         val player1Id: Int,
         val player2Id: Int,
@@ -49,13 +56,17 @@ sealed class MoveFeedback {
         val loserId: Int?
     ) : MoveFeedback()
 
+    @Serializable
     data class HandmaidPlayed(val protectedPlayerId: Int) : MoveFeedback()
 
+    @Serializable
     data class PrincePlayed(val playerId: Int, val targetId: Int) : MoveFeedback()
 
+    @Serializable
     data class ChancellorPlayed(val playerId: Int, val availableCards: List<Card>) :
         MoveFeedback()
 
+    @Serializable
     data class KingPlayed(val player1Id: Int, val player2Id: Int) : MoveFeedback()
 }
 
