@@ -4,14 +4,18 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed interface MoveResult {
+
+    @Serializable
     data class Success(
         val feedback: MoveFeedback,
         val messageToAll: String,
         val nextPlayerId: Int,
     ) : MoveResult
 
+    @Serializable
     data class Error(val message: String) : MoveResult
 
+    @Serializable
     data class ChancellorChoice(
         val message: String,
         val availableCards: List<Card>,

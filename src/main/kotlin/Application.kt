@@ -1,6 +1,7 @@
 package com.example
 
 import com.example.models.MoveFeedback
+import com.example.models.MoveResult
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -41,6 +42,11 @@ fun Application.module() {
                     subclass(MoveFeedback.PriestPlayed::class)
                     subclass(MoveFeedback.SpyPlayed::class)
                     subclass(MoveFeedback.ChancellorPlayed::class)
+                }
+                polymorphic(MoveResult::class) {
+                    subclass(MoveResult.Success::class)
+                    subclass(MoveResult.Error::class)
+                    subclass(MoveResult.ChancellorChoice::class)
                 }
             }
         })
