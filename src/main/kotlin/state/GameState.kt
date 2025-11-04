@@ -87,17 +87,23 @@ object GameState {
     }
 
     private fun validateMove(request: MoveRequest): MoveResult.Error? {
-        println("[ACTION] Próba walidacji ruchu: Gracz ID ${request.playerId}")
+        val activePlayer = players[activeIndex]
+
+        println("[ACTION] Próba walidacji ruchu: Gracz ID ${request.playerId} aktywny gracz : $activePlayer gracze: $players")
+
         if (chancellorState != null) {
             return MoveResult.Error("Trwa oczekiwanie na wybór karty przez kanclerza")
         }
+
         if (players.isEmpty()) {
             return MoveResult.Error("Brak graczy")
         }
-        val activePlayer = players[activeIndex]
+
+
         if (activePlayer.id != request.playerId) {
             return MoveResult.Error("Nie twoja tura")
         }
+
         println("[ACTION] Próba walidacji ruchu: Gracz ID ${request.playerId} moze wykonac ruch")
         return null
     }
