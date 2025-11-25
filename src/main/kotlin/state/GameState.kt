@@ -1,5 +1,6 @@
 package com.example.state
 
+import CardEffectResolver
 import com.example.MoveRequest
 import com.example.models.Card
 import com.example.models.DeckFactory
@@ -183,202 +184,16 @@ object GameState {
     }
 
     private fun resolveCardEffect(request: MoveRequest): MoveFeedback {
-    println("[ACTION] Rozwiązywanie efektu karty")
-        val currentPlayer = players.find { it.id == request.playerId }
-            ?: return MoveFeedback.Standard("Nie znaleziono gracza")
+        val resolver = CardEffectResolver(players, deck, secretCard)
+        val feedback = resolver.resolve(request)
 
-        val targetPlayer = players.firstOrNull { it.id == request.targetPlayerId } ?: currentPlayer
-
-        val playerIndex = players.indexOfFirst { it.id == currentPlayer.id }
-        val targetIndex = players.indexOfFirst { it.id == targetPlayer.id }
-
-        return when (request.card.number) {
-            0 -> {
-                println("Gracz ${currentPlayer.name} użył karty 0 (Szpieg)")
-
-                players[playerIndex] = currentPlayer.copy(isSpy = true)
-                MoveFeedback.SpyPlayed(currentPlayer.id)
-            }
-
-            1 -> {
-                println("Gracz ${currentPlayer.name} użył karty 1 (Strażnik)")
-
-                val guessedCardNumber = request.guessCardNumber
-                if (guessedCardNumber != null) {
-                    val opponentCard = targetPlayer.hand.firstOrNull()
-                    val wasCorrect = opponentCard?.number == guessedCardNumber
-                    if (wasCorrect) {
-
-                        if (targetIndex != -1) {
-                            players[targetIndex] = targetPlayer.copy(isAlive = false)
-                        }
-                    }
-                    MoveFeedback.GuardPlayed(
-                        currentPlayer.id,
-                        targetPlayer.id,
-                        guessedCardNumber,
-                        wasCorrect
-                    )
-                } else {
-                    MoveFeedback.Standard("Zagrano stażnika, ale wytąpił błąd")
-                }
-            }
-
-            2 -> {
-                println("Gracz ${currentPlayer.name} użył karty 2 (Kapłan)")
-                val opponentCard = targetPlayer.hand.firstOrNull()
-                if (opponentCard != null) {
-                    MoveFeedback.PriestPlayed(
-                        currentPlayer.id,
-                        targetPlayer.id,
-                        opponentCard.number
-                    )
-                }
-                MoveFeedback.Standard("Zagrano Kapłana, ale wystapił błąd")
-            }
-
-            3 -> {
-                println("Gracz ${currentPlayer.name} użył karty 3 (Baron)")
-                val playerCard = currentPlayer.hand.firstOrNull()
-                val opponentCard = targetPlayer.hand.firstOrNull()
-
-                if (playerCard != null && opponentCard != null) {
-                    when {
-                        playerCard.number < opponentCard.number -> MoveFeedback.BaronPlayed(
-                            currentPlayer.id,
-                            targetPlayer.id,
-                            targetPlayer.id,
-                            currentPlayer.id
-                        )
-
-                        playerCard.number > opponentCard.number -> MoveFeedback.BaronPlayed(
-                            currentPlayer.id,
-                            targetPlayer.id,
-                            currentPlayer.id,
-                            targetPlayer.id
-                        )
-
-                        else -> MoveFeedback.BaronPlayed(
-                            currentPlayer.id,
-                            targetPlayer.id,
-                            null,
-                            null
-                        )
-                    }
-                } else {
-                    MoveFeedback.Standard("Nie udalo się porównać kart")
-                }
-            }
-
-            4 -> {
-                println("Gracz ${currentPlayer.name} uzył karty 4 Sluzaca i jest chroniony do następnej tury.")
-
-                players[playerIndex] = currentPlayer.copy(isProtected = true)
-                MoveFeedback.HandmaidPlayed(currentPlayer.id)
-            }
-
-            5 -> {
-                println("Gracz ${currentPlayer.name} użył 5 Księcia")
-                val discardedCard = targetPlayer.hand.firstOrNull()
-
-                if (discardedCard != null) {
-                    removeCardFromHand(targetPlayer.id, discardedCard)
-                    addCardToPlayed(targetPlayer.id, discardedCard)
-
-                    checkDiscardedCardEffect(discardedCard, targetPlayer)
-
-                    val newCard = deck.removeFirstOrNull()
-
-                    if (newCard != null) {
-                        addCardToHand(targetPlayer.id, newCard)
-                    } else secretCard?.let { addCardToHand(targetPlayer.id, it) }
-                }
-                MoveFeedback.PrincePlayed(currentPlayer.id, targetPlayer.id)
-            }
-
-            6 -> {
-                println("Gracz ${currentPlayer.name} zagrał kanclerza.")
-
-                /* val firstExtraCard = deck.removeFirstOrNull()
-                 val secondExtraCard = deck.removeFirstOrNull()
-
-                 if (firstExtraCard != null) {
-                     addCardToHand(currentPlayer, firstExtraCard)
-                 }
-                 if (secondExtraCard != null) {
-                     addCardToHand(currentPlayer, secondExtraCard)
-                 }
-                 // WAŻNE: Ruch nie jest zakończony. Klient musi teraz otrzymać polecenie wyboru karty.
-                 // Zwracamy specjalny MoveFeedback, który to sygnalizuje.
-                 MoveFeedback.ChancellorPlayed(
-                     playerId = currentPlayer.id,
-                     availableCards = players.find { it.id == currentPlayer.id }?.hand
-                         ?: emptyList()
-                 )*/
-                MoveFeedback.ChancellorPlayed(
-                    playerId = currentPlayer.id,
-                    availableCards = emptyList()
-                )
-            }
-
-            7 -> {
-                println("Gracz ${currentPlayer.name} użył karty 7 (Krol)")
-                targetPlayer.let {
-                    val playerHand = currentPlayer.hand
-                    val tempHand = playerHand
-
-                    updatePlayerState(currentPlayer.id) { it.copy(hand = targetPlayer.hand) }
-                    updatePlayerState(targetPlayer.id) { it.copy(hand = tempHand) }
-                    println("Gracze ${currentPlayer.name} i ${targetPlayer.name} zamienili się kartami.")
-                    MoveFeedback.KingPlayed(currentPlayer.id, targetPlayer.id)
-                }
-                MoveFeedback.Standard("Nieprawidłowy cel dla Króla.")
-
-            }
-
-            8 -> {
-                println("Gracz ${currentPlayer.name} zagrał kartę  nr 8.")
-                MoveFeedback.Standard("Zagrano Hrabinę")
-            }
-
-            else -> {
-                println("Zagrano kartę o nieznanym numerze: ${request.card.number}")
-                MoveFeedback.Standard("Zagrano nieznaną kartę.")
-            }
-        }
-    }
-
-    private fun checkDiscardedCardEffect(
-        discardedCard: Card,
-        targetPlayer: Player
-    ) {
-        when (discardedCard.number) {
-            9 -> {
-                println("[EFFECT] Gracz ${targetPlayer.name} odrzucił Księżniczkę i przegrywa!")
-                val targetPlayerIndex =
-                    players.indexOfFirst { it.id == targetPlayer.id }
-                if (targetPlayerIndex != -1) {
-                    players[targetPlayerIndex] =
-                        players[targetPlayerIndex].copy(isAlive = false)
-                }
-            }
-
-            0 -> {
-                println("[EFFECT] Gracz ${targetPlayer.name} odrzucił Szpiega. Efekt Szpiega aktywowany.")
-                val targetPlayerIndex =
-                    players.indexOfFirst { it.id == targetPlayer.id }
-                if (targetPlayerIndex != -1) {
-                    players[targetPlayerIndex] =
-                        players[targetPlayerIndex].copy(isSpy = true)
-                }
-            }
-        }
+        return feedback
     }
 
     private fun handleChancellorMove(request: MoveRequest, player: Player): MoveResult {
         println("[CHANCELLOR] Rozpoczynanie specjalnego ruchu kanclerza")
 
-        // 1. Zagraj kartę kanclerza
+
         val feedback = playTheCard(request)
 
         val drawnCards = listOfNotNull(
@@ -397,12 +212,12 @@ object GameState {
             addCardToHand(player.id, card)
         }
 
-        // 5. Zwróć informację, że gracz musi wybrać kartę
+
         val currentPlayerState = players.find { it.id == player.id }
         return MoveResult.ChancellorChoice(
             message = "Wybierz kartę do odrzucenia",
             availableCards = currentPlayerState?.hand ?: emptyList(),
-            nextPlayerId = player.id // TURA NIE ZMIENIA SIĘ - ten sam gracz kontynuuje
+            nextPlayerId = player.id
         )
     }
 
@@ -411,6 +226,7 @@ object GameState {
         players.clear()
         deck = DeckFactory.createDeck().shuffled().toMutableList()
         activeIndex = 0
+        chancellorState = null
         idGen.set(0)
     }
 
@@ -421,36 +237,35 @@ object GameState {
             return MoveResult.Error("Nieprawidłowy gracz dla ruchu kanclerza")
         }
 
-        // 1. Znajdź gracza
+
         val playerIndex = players.indexOfFirst { it.id == playerId }
         if (playerIndex == -1) return MoveResult.Error("Gracz nie znaleziony")
 
         val player = players[playerIndex]
 
-        // 2. Sprawdź czy wybrana karta jest w ręce
         if (!player.hand.contains(cardToKeep)) {
             return MoveResult.Error("Wybrana karta nie znajduje się w ręce")
         }
 
-        // 3. Zbuduj nową rękę: tylko wybrana karta
+
         val newHand = listOf(cardToKeep)
 
-        // 4. Odłóż pozostałe karty na spód talii
+
         val cardsToDiscard = player.hand - cardToKeep
         deck.addAll(cardsToDiscard)
 
-        // 5. Zaktualizuj rękę gracza
+
         players[playerIndex] = player.copy(hand = newHand)
 
-        // 6. Wyczyść stan kanclerza
+
         chancellorState = null
 
-        // 7. Zakończ turę i przejdź do następnego gracza
+
         val previousActivePlayerName = players[activeIndex].name
         activeIndex = (activeIndex + 1) % players.size
         val nextActivePlayer = players[activeIndex]
 
-        println("[CHANCELLOR] Ruch kanclerza zakończony. Następny gracz: ${nextActivePlayer.name}")
+        println("[CHANCELLOR] Ruch gracza $previousActivePlayerName zakończony. Następny gracz: ${nextActivePlayer.name}")
         drawCardForPlayer(nextActivePlayer.id)
 
         return MoveResult.Success(
@@ -463,12 +278,12 @@ object GameState {
 
     private var chancellorState: ChancellorState? = null
 
-    @Serializable
-    data class ChancellorState(
-        val playerId: Int,
-        val drawnCards: List<Card>, // 2 nowe karty
-        val originalHand: List<Card> // ręka przed dobraniem
-    )
+
 }
 
-
+@Serializable
+data class ChancellorState(
+    val playerId: Int,
+    val drawnCards: List<Card>,
+    val originalHand: List<Card>
+)
