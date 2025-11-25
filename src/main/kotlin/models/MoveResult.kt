@@ -7,7 +7,7 @@ sealed interface MoveResult {
 
     @Serializable
     data class Success(
-        val feedback: MoveFeedback,
+        val feedback: CardPlayedFeedback,
         val messageToAll: String,
         val nextPlayerId: Int,
     ) : MoveResult
@@ -17,8 +17,7 @@ sealed interface MoveResult {
 
     @Serializable
     data class ChancellorChoice(
-        val message: String,
-        val availableCards: List<Card>,
+        val feedback: CardPlayedFeedback,
         val nextPlayerId: Int
     ) : MoveResult
 }
@@ -27,15 +26,15 @@ sealed interface MoveResult {
 data class MoveResponse(val ok: String, val nextPlayerId: Int?)
 
 @Serializable
-sealed class MoveFeedback {
+sealed class CardPlayedFeedback {
 
     @Serializable
-    data class Standard(val message: String) : MoveFeedback()
+    data class Standard(val message: String) : CardPlayedFeedback()
 
     @Serializable
     data class SpyPlayed(
         val spyPlayerId: Int
-    ) : MoveFeedback()
+    ) : CardPlayedFeedback()
 
     @Serializable
     data class GuardPlayed(
@@ -43,14 +42,14 @@ sealed class MoveFeedback {
         val targetPlayerId: Int,
         val guessedCardNumber: Int,
         val wasCorrect: Boolean
-    ) : MoveFeedback()
+    ) : CardPlayedFeedback()
 
     @Serializable
     data class PriestPlayed(
         val viewingPlayerId: Int,
         val targetPlayerId: Int,
         val revealedCardNumber: Int
-    ) : MoveFeedback()
+    ) : CardPlayedFeedback()
 
     @Serializable
     data class BaronPlayed(
@@ -58,20 +57,19 @@ sealed class MoveFeedback {
         val player2Id: Int,
         val winnerId: Int?,
         val loserId: Int?
-    ) : MoveFeedback()
+    ) : CardPlayedFeedback()
 
     @Serializable
-    data class HandmaidPlayed(val protectedPlayerId: Int) : MoveFeedback()
+    data class HandmaidPlayed(val protectedPlayerId: Int) : CardPlayedFeedback()
 
     @Serializable
-    data class PrincePlayed(val playerId: Int, val targetId: Int) : MoveFeedback()
+    data class PrincePlayed(val playerId: Int, val targetId: Int) : CardPlayedFeedback()
 
     @Serializable
-    data class ChancellorPlayed(val playerId: Int, val availableCards: List<Card>) :
-        MoveFeedback()
+    data class ChancellorPlayed(val playerId: Int) : CardPlayedFeedback()
 
     @Serializable
-    data class KingPlayed(val player1Id: Int, val player2Id: Int) : MoveFeedback()
+    data class KingPlayed(val player1Id: Int, val player2Id: Int) : CardPlayedFeedback()
 }
 
 @Serializable

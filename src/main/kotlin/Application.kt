@@ -1,6 +1,6 @@
 package com.example
 
-import com.example.models.MoveFeedback
+import com.example.models.CardPlayedFeedback
 import com.example.models.MoveResult
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -32,16 +32,16 @@ fun Application.module() {
             isLenient = true
 
             serializersModule = SerializersModule {
-                polymorphic(MoveFeedback::class) {
-                    subclass(MoveFeedback.Standard::class)
-                    subclass(MoveFeedback.GuardPlayed::class)
-                    subclass(MoveFeedback.BaronPlayed::class)
-                    subclass(MoveFeedback.HandmaidPlayed::class)
-                    subclass(MoveFeedback.KingPlayed::class)
-                    subclass(MoveFeedback.PrincePlayed::class)
-                    subclass(MoveFeedback.PriestPlayed::class)
-                    subclass(MoveFeedback.SpyPlayed::class)
-                    subclass(MoveFeedback.ChancellorPlayed::class)
+                polymorphic(CardPlayedFeedback::class) {
+                    subclass(CardPlayedFeedback.Standard::class)
+                    subclass(CardPlayedFeedback.GuardPlayed::class)
+                    subclass(CardPlayedFeedback.BaronPlayed::class)
+                    subclass(CardPlayedFeedback.HandmaidPlayed::class)
+                    subclass(CardPlayedFeedback.KingPlayed::class)
+                    subclass(CardPlayedFeedback.PrincePlayed::class)
+                    subclass(CardPlayedFeedback.PriestPlayed::class)
+                    subclass(CardPlayedFeedback.SpyPlayed::class)
+                    subclass(CardPlayedFeedback.ChancellorPlayed::class)
                 }
                 polymorphic(MoveResult::class) {
                     subclass(MoveResult.Success::class)

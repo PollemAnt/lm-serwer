@@ -5,7 +5,7 @@ import com.example.MoveRequest
 import com.example.models.Card
 import com.example.models.DeckFactory
 import com.example.models.GameSnapshot
-import com.example.models.MoveFeedback
+import com.example.models.CardPlayedFeedback
 import com.example.models.MoveResult
 import com.example.models.Player
 import kotlinx.serialization.Serializable
@@ -144,13 +144,13 @@ object GameState {
         val nextActivePlayer = players[activeIndex].also{
             drawCardForPlayer(it.id)
         }
-
+        println("[ACTION] Feedback po ruchu gracza $feedback")
         return MoveResult.Success(feedback, msg, nextActivePlayer.id)
     }
 
-    private fun playTheCard(request: MoveRequest): MoveFeedback {
+    private fun playTheCard(request: MoveRequest): CardPlayedFeedback {
         val player = players.find { it.id == request.playerId }
-            ?: return MoveFeedback.Standard("Błąd krytyczny: Gracz zniknął w trakcie tury.")
+            ?: return CardPlayedFeedback.Standard("Błąd krytyczny: Gracz zniknął w trakcie tury.")
 
         println("[ACTION] Gracz ${player.name} wykonuje ruch")
         removeCardFromHand(player.id, request.card)
@@ -183,7 +183,7 @@ object GameState {
         }
     }
 
-    private fun resolveCardEffect(request: MoveRequest): MoveFeedback {
+    private fun resolveCardEffect(request: MoveRequest): CardPlayedFeedback {
         val resolver = CardEffectResolver(players, deck, secretCard)
         val feedback = resolver.resolve(request)
 
@@ -207,16 +207,12 @@ object GameState {
             originalHand = player.hand
         )
 
-
         drawnCards.forEach { card ->
             addCardToHand(player.id, card)
         }
 
-
-        val currentPlayerState = players.find { it.id == player.id }
         return MoveResult.ChancellorChoice(
-            message = "Wybierz kartę do odrzucenia",
-            availableCards = currentPlayerState?.hand ?: emptyList(),
+            feedback = feedback,
             nextPlayerId = player.id
         )
     }
@@ -269,15 +265,13 @@ object GameState {
         drawCardForPlayer(nextActivePlayer.id)
 
         return MoveResult.Success(
-            feedback = MoveFeedback.Standard("Kanclerz zakończył ruch"),
+            feedback = CardPlayedFeedback.Standard("Kanclerz zakończył ruch"),
             messageToAll = "Gracz ${player.name} zakończył ruch kanclerza",
             nextPlayerId = nextActivePlayer.id
         )
     }
 
-
     private var chancellorState: ChancellorState? = null
-
 
 }
 
