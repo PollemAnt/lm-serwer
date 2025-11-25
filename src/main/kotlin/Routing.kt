@@ -3,7 +3,6 @@ package com.example
 import com.example.com.example.ConnectionManager
 import com.example.models.Card
 import com.example.models.CardPlayedEvent
-import com.example.models.ChancellorChoiceResponse
 import com.example.models.CompleteChancellorRequest
 import com.example.models.MoveResponse
 import com.example.models.PlayerJoinEvent
@@ -96,23 +95,7 @@ fun Application.configureRouting() {
                 }
 
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
-
-                is MoveResult.ChancellorChoice -> {
-                    call.respond(
-                        ChancellorChoiceResponse(
-                            message = result.message,
-                            availableCards = result.availableCards,
-                            nextPlayer = result.nextPlayerId
-                        )
-                    )
-                    /*// Możesz też wysłać event do wszystkich klientów
-                    ConnectionManager.broadcastEvent(
-                        ChancellorChoiceMadeEvent(
-                            playerId = request.playerId,
-                            availableCards = result.availableCards
-                        )
-                    )*/
-                }
+                is MoveResult.ChancellorChoice -> call.respond(HttpStatusCode.OK)
             }
         }
 
@@ -140,17 +123,17 @@ fun Application.configureRouting() {
             }
         }
 
-        post("/draw") {
+        post("/drawCardForChancellor") {
             val request = call.receive<DrawRequest>()
-            val card = GameState.drawCardForPlayer(request.playerId)
-            if (card == null) {
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Brak kart w talii albo gracza")
-                )
-            } else {
-                call.respond(card)
+            GameState.onChancellorPlayed(request.playerId, request.card)
+
+            val player = GameState.getPlayers().find { it.id == request.playerId }
+            if (player == null) {
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
+                return@post
             }
+
+            call.respond(player.hand)
         }
 
         get("/hand/{playerId}") {
@@ -194,7 +177,7 @@ fun Application.configureRouting() {
 
 
 @Serializable
-data class DrawRequest(val playerId: Int)
+data class DrawRequest(val playerId: Int, val card: Card)
 
 @Serializable
 data class MoveRequest(val playerId: Int, val card: Card, val targetPlayerId: Int?, val guessCardNumber: Int?)

@@ -125,11 +125,7 @@ object GameState {
         val activePlayer = players[activeIndex]
         println("[SUCCESS] Tura gracza ${activePlayer.name} potwierdzona.")
 
-        return if (request.card.number == 6) {
-            handleChancellorMove(request, activePlayer)
-        } else {
-            handleNormalMove(activePlayer, request)
-        }
+        return handleNormalMove(activePlayer, request)
     }
 
     private fun handleNormalMove(
@@ -190,33 +186,6 @@ object GameState {
         return feedback
     }
 
-    private fun handleChancellorMove(request: MoveRequest, player: Player): MoveResult {
-        println("[CHANCELLOR] Rozpoczynanie specjalnego ruchu kanclerza")
-
-
-        val feedback = playTheCard(request)
-
-        val drawnCards = listOfNotNull(
-            deck.removeFirstOrNull(),
-            deck.removeFirstOrNull()
-        )
-
-        chancellorState = ChancellorState(
-            playerId = player.id,
-            drawnCards = drawnCards,
-            originalHand = player.hand
-        )
-
-        drawnCards.forEach { card ->
-            addCardToHand(player.id, card)
-        }
-
-        return MoveResult.ChancellorChoice(
-            feedback = feedback,
-            nextPlayerId = player.id
-        )
-    }
-
 
     fun resetGame() {
         players.clear()
@@ -273,11 +242,39 @@ object GameState {
 
     private var chancellorState: ChancellorState? = null
 
+    fun onChancellorPlayed(playerId: Int, chancellorCard: Card){
+        addCardToPlayed(playerId, chancellorCard)
+        drawCardForChancellor(playerId)
+    }
+
+    private fun drawCardForChancellor(playerId: Int){
+
+        val card1 = deck.removeFirstOrNull()
+        val card2 = deck.removeFirstOrNull()
+
+        val drawnCard1 = card1 ?: secretCard
+        val drawnCard2 = card2 ?: if (card1 == null) null else secretCard
+
+        val drawnCards = listOfNotNull(drawnCard1, drawnCard2)
+
+        if (drawnCards.isEmpty()) {
+            return
+        }
+
+        chancellorState = ChancellorState(
+            playerId = playerId,
+            drawnCards = drawnCards
+        )
+
+        drawnCards.forEach { card ->
+            addCardToHand(playerId, card)
+        }
+    }
+
 }
 
 @Serializable
 data class ChancellorState(
     val playerId: Int,
-    val drawnCards: List<Card>,
-    val originalHand: List<Card>
+    val drawnCards: List<Card>
 )
