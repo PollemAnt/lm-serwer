@@ -100,9 +100,9 @@ fun Application.configureRouting() {
         }
 
         post("/complete_chancellor") {
-            val request = call.receive<CompleteChancellorRequest>()
+            val request = call.receive<MoveRequest>()
 
-            val result = GameState.completeChancellorMove(request.playerId, request.cardToKeep)
+            val result = GameState.completeChancellorMove(request.playerId, request.card)
             when (result) {
                 is MoveResult.Success -> {
                     call.respond(
@@ -111,12 +111,12 @@ fun Application.configureRouting() {
                             result.nextPlayerId
                         )
                     )
-                    /*ConnectionManager.broadcastEvent(
-                        ChancellorCompletedEvent(
+                    ConnectionManager.broadcastEvent(
+                        CardPlayedEvent(
                             playerId = request.playerId,
-                            keptCard = request.cardToKeep
+                            card = request.card,
                         )
-                    )*/
+                    )
                 }
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
                 else -> call.respond(HttpStatusCode.BadRequest, "Nieoczekiwany wynik")

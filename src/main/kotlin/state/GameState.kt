@@ -243,6 +243,13 @@ object GameState {
     private var chancellorState: ChancellorState? = null
 
     fun onChancellorPlayed(playerId: Int, chancellorCard: Card){
+        val activePlayer = players[activeIndex]
+
+        if (activePlayer.id != playerId) {
+            println("[VALIDATE] FAIL: Wrong turn")
+            return
+        }
+        removeCardFromHand(playerId, chancellorCard)
         addCardToPlayed(playerId, chancellorCard)
         drawCardForChancellor(playerId)
     }
