@@ -95,7 +95,7 @@ fun Application.configureRouting() {
                 }
 
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
-                is MoveResult.ChancellorChoice -> call.respond(HttpStatusCode.OK)
+                else -> call.respond(HttpStatusCode.BadRequest, "Nieoczekiwany wynik")
             }
         }
 
@@ -115,6 +115,7 @@ fun Application.configureRouting() {
                         CardPlayedEvent(
                             playerId = request.playerId,
                             card = request.card,
+                            targetPlayerId = request.targetPlayerId
                         )
                     )
                 }

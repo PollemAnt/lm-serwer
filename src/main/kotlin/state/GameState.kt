@@ -136,12 +136,15 @@ object GameState {
         val feedback = playTheCard(request)
         val msg = "Gracz ${activePlayer.name} wykonał ruch kartą ${request.card.name}"
 
-        activeIndex = (activeIndex + 1) % players.size
-        val nextActivePlayer = players[activeIndex].also{
-            drawCardForPlayer(it.id)
-        }
+        prepareNextPlayerTurn()
+
         println("[ACTION] Feedback po ruchu gracza $feedback")
-        return MoveResult.Success(feedback, msg, nextActivePlayer.id)
+        return MoveResult.Success(feedback, msg, players[activeIndex].id)
+    }
+
+    private fun prepareNextPlayerTurn() {
+        activeIndex = (activeIndex + 1) % players.size
+        drawCardForPlayer(players[activeIndex].id)
     }
 
     private fun playTheCard(request: MoveRequest): CardPlayedFeedback {
@@ -227,22 +230,22 @@ object GameState {
 
 
         val previousActivePlayerName = players[activeIndex].name
-        activeIndex = (activeIndex + 1) % players.size
-        val nextActivePlayer = players[activeIndex]
 
-        println("[CHANCELLOR] Ruch gracza $previousActivePlayerName zakończony. Następny gracz: ${nextActivePlayer.name}")
-        drawCardForPlayer(nextActivePlayer.id)
+        prepareNextPlayerTurn()
+
+        println("[CHANCELLOR] Ruch gracza $previousActivePlayerName zakończony. Następny gracz: ${players[activeIndex].name}")
+
 
         return MoveResult.Success(
-            feedback = CardPlayedFeedback.Standard("Kanclerz zakończył ruch"),
+            feedback = CardPlayedFeedback.ChancellorPlayed(playerId),
             messageToAll = "Gracz ${player.name} zakończył ruch kanclerza",
-            nextPlayerId = nextActivePlayer.id
+            nextPlayerId = players[activeIndex].id
         )
     }
 
     private var chancellorState: ChancellorState? = null
 
-    fun onChancellorPlayed(playerId: Int, chancellorCard: Card){
+    fun onChancellorPlayed(playerId: Int, chancellorCard: Card) {
         val activePlayer = players[activeIndex]
 
         if (activePlayer.id != playerId) {
@@ -254,7 +257,7 @@ object GameState {
         drawCardForChancellor(playerId)
     }
 
-    private fun drawCardForChancellor(playerId: Int){
+    private fun drawCardForChancellor(playerId: Int) {
 
         val card1 = deck.removeFirstOrNull()
         val card2 = deck.removeFirstOrNull()
