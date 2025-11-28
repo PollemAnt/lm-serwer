@@ -14,12 +14,6 @@ sealed interface MoveResult {
 
     @Serializable
     data class Error(val message: String) : MoveResult
-
-    @Serializable
-    data class ChancellorChoice(
-        val feedback: CardPlayedFeedback,
-        val nextPlayerId: Int
-    ) : MoveResult
 }
 
 @Serializable
@@ -71,16 +65,3 @@ sealed class CardPlayedFeedback {
     @Serializable
     data class KingPlayed(val player1Id: Int, val player2Id: Int) : CardPlayedFeedback()
 }
-
-@Serializable
-data class CompleteChancellorRequest(
-    val playerId: Int,
-    val cardToKeep: Card
-)
-
-@Serializable
-data class ChancellorChoiceResponse(
-    val message: String,
-    val availableCards: List<Card>,
-    val nextPlayer: Int
-)

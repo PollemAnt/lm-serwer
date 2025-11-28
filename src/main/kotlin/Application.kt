@@ -46,7 +46,6 @@ fun Application.module() {
                 polymorphic(MoveResult::class) {
                     subclass(MoveResult.Success::class)
                     subclass(MoveResult.Error::class)
-                    subclass(MoveResult.ChancellorChoice::class)
                 }
             }
         })

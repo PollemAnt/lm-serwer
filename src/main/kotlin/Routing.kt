@@ -3,7 +3,6 @@ package com.example
 import com.example.com.example.ConnectionManager
 import com.example.models.Card
 import com.example.models.CardPlayedEvent
-import com.example.models.CompleteChancellorRequest
 import com.example.models.MoveResponse
 import com.example.models.PlayerJoinEvent
 import com.example.models.PlayerJoinRequest
@@ -77,6 +76,7 @@ fun Application.configureRouting() {
             val request = call.receive<MoveRequest>()
 
             val result = GameState.makeMove(request)
+
             when (result) {
                 is MoveResult.Success -> {
                     call.respond(
@@ -114,7 +114,12 @@ fun Application.configureRouting() {
                     ConnectionManager.broadcastEvent(
                         CardPlayedEvent(
                             playerId = request.playerId,
-                            card = request.card,
+                            card = Card(
+                                id = -1,
+                                number = 6,
+                                name = "Kanclerz",
+                                description = "Zobacz karty z talibla balbla"
+                            ),
                             targetPlayerId = request.targetPlayerId
                         )
                     )
@@ -182,7 +187,3 @@ data class DrawRequest(val playerId: Int, val card: Card)
 
 @Serializable
 data class MoveRequest(val playerId: Int, val card: Card, val targetPlayerId: Int?, val guessCardNumber: Int?)
-
-
-@Serializable
-data class ErrorResponse(val error: String)
