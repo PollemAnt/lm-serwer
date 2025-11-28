@@ -5,6 +5,16 @@ object DeckFactory {
         val deck = mutableListOf<Card>()
         var idCounter = 1
 
+        repeat(2) {
+            deck.add(
+                Card(
+                    id = idCounter++,
+                    number = 0,
+                    name = "Szpieg",
+                    description = "Szpieg blabll"
+                )
+            )
+        }
         repeat(6) {
             deck.add(
                 Card(
