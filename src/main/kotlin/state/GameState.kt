@@ -1,6 +1,6 @@
 package com.example.state
 
-import CardEffectResolver
+import com.example.state.effects.CardEffectResolver
 import com.example.MoveRequest
 import com.example.models.Card
 import com.example.models.DeckFactory

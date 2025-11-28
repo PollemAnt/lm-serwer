@@ -1,3 +1,5 @@
+package com.example.state.effects
+
 import com.example.MoveRequest
 import com.example.models.Card
 import com.example.models.CardPlayedFeedback
@@ -16,14 +18,14 @@ class CardEffectResolver(
             ?: return CardPlayedFeedback.Standard("Nie znaleziono gracza")
 
         val targetPlayer = players.firstOrNull { it.id == request.targetPlayerId } ?: currentPlayer
-
+        updatePlayerState(currentPlayer.id) { it.copy(isProtected = false) }
         return when (request.card.number) {
             0 -> resolveSpy(currentPlayer)
             1 -> resolveGuard(request, currentPlayer, targetPlayer)
             2 -> resolvePriest(currentPlayer, targetPlayer)
             3 -> resolveBaron(currentPlayer, targetPlayer)
             4 -> resolveHandmaid(currentPlayer)
-            5 -> resolvePrince(request, currentPlayer, targetPlayer)
+            5 -> resolvePrince(currentPlayer, targetPlayer)
             6 -> resolveChancellor(currentPlayer)
             7 -> resolveKing(currentPlayer, targetPlayer)
             8 -> resolveCountess(currentPlayer)
@@ -65,6 +67,7 @@ class CardEffectResolver(
                 println("[EFFECT] Gracz ${targetPlayer.name} odrzucił Księżniczkę i przegrywa!")
                 updatePlayerState(targetPlayer.id) { it.copy(isAlive = false) }
             }
+
             0 -> {
                 println("[EFFECT] Gracz ${targetPlayer.name} odrzucił Szpiega. Efekt Szpiega aktywowany.")
                 updatePlayerState(targetPlayer.id) { it.copy(isSpy = true) }
@@ -79,7 +82,11 @@ class CardEffectResolver(
         return CardPlayedFeedback.SpyPlayed(currentPlayer.id)
     }
 
-    private fun resolveGuard(request: MoveRequest, currentPlayer: Player, targetPlayer: Player): CardPlayedFeedback {
+    private fun resolveGuard(
+        request: MoveRequest,
+        currentPlayer: Player,
+        targetPlayer: Player
+    ): CardPlayedFeedback {
         println("Gracz ${currentPlayer.name} użył karty 1 (Strażnik)")
         val guessedCardNumber = request.guessCardNumber
         if (guessedCardNumber != null) {
@@ -94,6 +101,8 @@ class CardEffectResolver(
                 guessedCardNumber,
                 wasCorrect
             )
+        } else {
+            CardPlayedFeedback.Standard("Zagrano strażnika")
         }
         return CardPlayedFeedback.Standard("Zagrano strażnika, ale wystąpił błąd")
     }
@@ -121,13 +130,30 @@ class CardEffectResolver(
             return when {
                 playerCard.number < opponentCard.number -> {
                     updatePlayerState(currentPlayer.id) { it.copy(isAlive = false) }
-                    CardPlayedFeedback.BaronPlayed(currentPlayer.id, targetPlayer.id, targetPlayer.id, currentPlayer.id)
+                    CardPlayedFeedback.BaronPlayed(
+                        currentPlayer.id,
+                        targetPlayer.id,
+                        targetPlayer.id,
+                        currentPlayer.id
+                    )
                 }
+
                 playerCard.number > opponentCard.number -> {
                     updatePlayerState(targetPlayer.id) { it.copy(isAlive = false) }
-                    CardPlayedFeedback.BaronPlayed(currentPlayer.id, targetPlayer.id, currentPlayer.id, targetPlayer.id)
+                    CardPlayedFeedback.BaronPlayed(
+                        currentPlayer.id,
+                        targetPlayer.id,
+                        currentPlayer.id,
+                        targetPlayer.id
+                    )
                 }
-                else -> CardPlayedFeedback.BaronPlayed(currentPlayer.id, targetPlayer.id, null, null)
+
+                else -> CardPlayedFeedback.BaronPlayed(
+                    currentPlayer.id,
+                    targetPlayer.id,
+                    null,
+                    null
+                )
             }
         }
         return CardPlayedFeedback.Standard("Nie udało się porównać kart")
@@ -139,7 +165,10 @@ class CardEffectResolver(
         return CardPlayedFeedback.HandmaidPlayed(currentPlayer.id)
     }
 
-    private fun resolvePrince(request: MoveRequest, currentPlayer: Player, targetPlayer: Player): CardPlayedFeedback {
+    private fun resolvePrince(
+        currentPlayer: Player,
+        targetPlayer: Player
+    ): CardPlayedFeedback {
         println("Gracz ${currentPlayer.name} użył 5 (Księcia)")
         val discardedCard = targetPlayer.hand.firstOrNull()
 
