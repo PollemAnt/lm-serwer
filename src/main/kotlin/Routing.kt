@@ -3,7 +3,6 @@ package com.example
 import com.example.com.example.ConnectionManager
 import com.example.models.Card
 import com.example.models.CardPlayedEvent
-import com.example.models.MoveResponse
 import com.example.models.PlayerJoinEvent
 import com.example.models.PlayerJoinRequest
 import com.example.state.GameState
@@ -79,17 +78,13 @@ fun Application.configureRouting() {
 
             when (result) {
                 is MoveResult.Success -> {
-                    call.respond(
-                        MoveResponse(
-                            result.messageToAll,
-                            result.nextPlayerId
-                        )
-                    )
                     ConnectionManager.broadcastEvent(
                         CardPlayedEvent(
                             playerId = request.playerId,
                             card = request.card,
-                            targetPlayerId = request.targetPlayerId
+                            targetPlayerId = request.targetPlayerId,
+                            feedback = result.feedback
+
                         )
                     )
                 }
@@ -105,12 +100,7 @@ fun Application.configureRouting() {
             val result = GameState.completeChancellorMove(request.playerId, request.card)
             when (result) {
                 is MoveResult.Success -> {
-                    call.respond(
-                        MoveResponse(
-                            result.messageToAll,
-                            result.nextPlayerId
-                        )
-                    )
+
                     ConnectionManager.broadcastEvent(
                         CardPlayedEvent(
                             playerId = request.playerId,
@@ -120,7 +110,8 @@ fun Application.configureRouting() {
                                 name = "Kanclerz",
                                 description = "Zobacz karty z talibla balbla"
                             ),
-                            targetPlayerId = request.targetPlayerId
+                            targetPlayerId = request.targetPlayerId,
+                            feedback = result.feedback
                         )
                     )
                 }

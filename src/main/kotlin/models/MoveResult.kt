@@ -17,9 +17,6 @@ sealed interface MoveResult {
 }
 
 @Serializable
-data class MoveResponse(val ok: String, val nextPlayerId: Int?)
-
-@Serializable
 sealed class CardPlayedFeedback {
 
     @Serializable
