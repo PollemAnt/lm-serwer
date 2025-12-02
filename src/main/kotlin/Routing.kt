@@ -25,6 +25,9 @@ import kotlinx.serialization.json.Json
 
 
 fun Application.configureRouting() {
+
+    val gameState = GameState()
+
     routing {
         get("/") {
             call.respondText("Serwer List Miłosny działa!")
@@ -51,7 +54,7 @@ fun Application.configureRouting() {
 
         post("/join") {
             val request = call.receive<PlayerJoinRequest>()
-            val playerAdded = GameState.addPlayer(request.name)
+            val playerAdded = gameState.addPlayer(request.name)
 
             if (playerAdded != null) {
                 ConnectionManager.broadcastEvent(PlayerJoinEvent(player = playerAdded))
@@ -66,7 +69,7 @@ fun Application.configureRouting() {
         }
 
         get("/state") {
-            val json = Json.encodeToString(GameState.getState())
+            val json = Json.encodeToString(gameState.getState())
             call.respondText(json, ContentType.Application.Json)
         }
 
@@ -74,7 +77,7 @@ fun Application.configureRouting() {
         post("/move") {
             val request = call.receive<MoveRequest>()
 
-            val result = GameState.makeMove(request)
+            val result = gameState.makeMove(request)
 
             when (result) {
                 is MoveResult.Success -> {
@@ -97,7 +100,7 @@ fun Application.configureRouting() {
         post("/complete_chancellor") {
             val request = call.receive<MoveRequest>()
 
-            val result = GameState.completeChancellorMove(request.playerId, request.card)
+            val result = gameState.completeChancellorMove(request.playerId, request.card)
             when (result) {
                 is MoveResult.Success -> {
 
@@ -122,9 +125,9 @@ fun Application.configureRouting() {
 
         post("/drawCardForChancellor") {
             val request = call.receive<DrawRequest>()
-            GameState.onChancellorPlayed(request.playerId, request.card)
+            gameState.drawCardForChancellor(request.playerId, request.card)
 
-            val player = GameState.getPlayers().find { it.id == request.playerId }
+            val player = gameState.getPlayers().find { it.id == request.playerId }
             if (player == null) {
                 call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
                 return@post
@@ -140,7 +143,7 @@ fun Application.configureRouting() {
                 return@get
             }
 
-            val player = GameState.getPlayers().find { it.id == playerId }
+            val player = gameState.getPlayers().find { it.id == playerId }
             if (player == null) {
                 call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
                 return@get
@@ -150,7 +153,7 @@ fun Application.configureRouting() {
         }
 
         get("/reset") {
-            GameState.resetGame()
+            gameState.resetGame()
             call.respond(HttpStatusCode.OK)
         }
 
@@ -161,7 +164,7 @@ fun Application.configureRouting() {
                 return@get
             }
 
-            val player = GameState.getPlayers().find { it.id == playerId }
+            val player = gameState.getPlayers().find { it.id == playerId }
             if (player == null) {
                 call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
                 return@get
