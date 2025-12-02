@@ -46,7 +46,7 @@ class GameState {
         return GameSnapshot(
             players = playerManager.getAll(),
             cards = deckManager.getDeckSnapshot(),
-            activePlayerId = turnManager.getActivePlayerId()
+            activePlayerId = turnManager.getActivePlayerId() ?: 0
         )
     }
 
@@ -70,7 +70,7 @@ class GameState {
         return MoveResult.Success(
             feedback,
             "Gracz ${player.name} wykonał ruch",
-            turnManager.getActivePlayerId()
+            turnManager.getActivePlayerId() ?: 0
         )
     }
 

@@ -9,8 +9,8 @@ class TurnManager(
 
     private var activeIndex: Int = 0
 
-    val currentPlayer: Player
-        get() = playerManager.getAll()[activeIndex]
+    val currentPlayer: Player?
+        get() = playerManager.getAll().getOrNull(activeIndex)
 
     fun setFirstPlayer() {
         activeIndex = 0
@@ -30,10 +30,10 @@ class TurnManager(
 
     fun forceDrawForActivePlayer() {
         val card = deckManager.draw()
-        if (card != null) {
-            playerManager.addCardToHand(currentPlayer.id, card)
+        if (card != null && currentPlayer != null) {
+            playerManager.addCardToHand(currentPlayer!!.id, card)
         }
     }
 
-    fun getActivePlayerId(): Int = currentPlayer.id
+    fun getActivePlayerId(): Int? = currentPlayer?.id
 }
