@@ -61,8 +61,7 @@ class GameState {
 
         val feedback = CardEffectResolver(
             playerManager.getAll(),
-            deckManager.getDeckSnapshot().toMutableList(),
-            deckManager.getSecretCard()
+            deckManager
         ).resolve(request)
 
         turnManager.advanceTurn()

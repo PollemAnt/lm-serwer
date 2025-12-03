@@ -4,12 +4,12 @@ import com.example.MoveRequest
 import com.example.models.Card
 import com.example.models.CardPlayedFeedback
 import com.example.models.Player
+import com.example.state.managers.DeckManager
 
 
 class CardEffectResolver(
     private val players: MutableList<Player>,
-    private val deck: MutableList<Card>,
-    private val secretCard: Card?
+    private val deckManager: DeckManager
 ) {
 
     fun resolve(request: MoveRequest): CardPlayedFeedback {
@@ -177,11 +177,11 @@ class CardEffectResolver(
             addCardToPlayed(targetPlayer.id, discardedCard)
             checkDiscardedCardEffect(discardedCard, targetPlayer)
 
-            val newCard = deck.removeFirstOrNull()
+            val newCard = deckManager.draw()
             if (newCard != null) {
                 addCardToHand(targetPlayer.id, newCard)
             } else {
-                secretCard?.let { addCardToHand(targetPlayer.id, it) }
+                deckManager.getSecretCard()?.let { addCardToHand(targetPlayer.id, it) }
             }
         }
         return CardPlayedFeedback.PrincePlayed(currentPlayer.id, targetPlayer.id)
