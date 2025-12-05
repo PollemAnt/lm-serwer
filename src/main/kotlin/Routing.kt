@@ -92,7 +92,7 @@ fun Application.configureRouting() {
                         )
                     )
 
-                    if(result.isRoundEnded){
+                    if (result.isRoundEnded) {
                         delay(1000)
                         ConnectionManager.broadcastEvent(
                             RoundEndedEvent(
@@ -128,6 +128,7 @@ fun Application.configureRouting() {
                         )
                     )
                 }
+
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
                 else -> call.respond(HttpStatusCode.BadRequest, "Nieoczekiwany wynik")
             }
@@ -144,6 +145,27 @@ fun Application.configureRouting() {
             }
 
             call.respond(player.hand)
+        }
+
+        post("/getPlayerHandForPriest") {
+            val request = call.receive<PriestRequest>()
+
+            val target = gameState.getPlayers().find { it.id == request.targetId }
+            if (target == null) {
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
+                return@post
+            }
+
+            val targetHand = gameState.getPlayerHandForPriest(request.playerId, request.targetId)
+
+            if (targetHand == null) {
+
+                call.respond(HttpStatusCode.Forbidden, mapOf("error" to "To nie jest twoja tura"))
+
+                return@post
+            }
+
+            call.respond(HttpStatusCode.OK, targetHand)
         }
 
         get("/hand/{playerId}") {
@@ -190,4 +212,12 @@ fun Application.configureRouting() {
 data class DrawRequest(val playerId: Int, val card: Card)
 
 @Serializable
-data class MoveRequest(val playerId: Int, val card: Card, val targetPlayerId: Int?, val guessCardNumber: Int?)
+data class MoveRequest(
+    val playerId: Int,
+    val card: Card,
+    val targetPlayerId: Int?,
+    val guessCardNumber: Int?
+)
+
+@Serializable
+data class PriestRequest(val playerId: Int, val targetId: Int)

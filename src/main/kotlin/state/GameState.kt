@@ -96,7 +96,14 @@ class GameState {
     }
 
     fun drawCardForChancellor(playerId: Int, card: Card) {
+        if (playerId != turnManager.getActivePlayerId()) return
         chancellorHandler.drawCardForChancellor(playerId, card)
+    }
+
+    fun getPlayerHandForPriest(playerId: Int, targetId  : Int):List<Card>? {
+        if (playerId != turnManager.getActivePlayerId()) return null
+
+        return playerManager.getPlayerHand(targetId)
     }
 }
 

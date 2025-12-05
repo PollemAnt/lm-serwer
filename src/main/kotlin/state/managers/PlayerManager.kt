@@ -86,4 +86,8 @@ class PlayerManager {
     fun getPlayerName(id: Int): String {
         return players.find { it.id == id }?.name ?: ""
     }
+
+    fun getPlayerHand(playerId: Int): List<Card>? {
+        return players.find { it.id == playerId }?.hand
+    }
 }
