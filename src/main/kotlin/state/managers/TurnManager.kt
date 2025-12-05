@@ -12,8 +12,8 @@ class TurnManager(
     val currentPlayer: Player?
         get() = playerManager.getAll().getOrNull(activeIndex)
 
-    fun setFirstPlayer() {
-        activeIndex = 0
+    fun setFirstPlayer(playerId : Int = 0) {
+        activeIndex = playerId
     }
 
     fun advanceTurn() {

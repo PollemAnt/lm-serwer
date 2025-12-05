@@ -7,6 +7,7 @@ import com.example.models.PlayerJoinEvent
 import com.example.models.PlayerJoinRequest
 import com.example.state.GameState
 import com.example.models.MoveResult
+import com.example.models.RoundEndedEvent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -20,6 +21,7 @@ import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -87,9 +89,17 @@ fun Application.configureRouting() {
                             card = request.card,
                             targetPlayerId = request.targetPlayerId,
                             feedback = result.feedback
-
                         )
                     )
+
+                    if(result.isRoundEnded){
+                        delay(1000)
+                        ConnectionManager.broadcastEvent(
+                            RoundEndedEvent(
+                                roundSummary = result.roundSummary!!
+                            )
+                        )
+                    }
                 }
 
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)

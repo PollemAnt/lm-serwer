@@ -50,4 +50,40 @@ class PlayerManager {
             p.copy(playedCards = p.playedCards + card)
         }
     }
+
+    fun onlyOnePlayerIsAlive(): Boolean {
+        return players.count { it.isAlive } == 1
+    }
+
+    fun getAlivePlayers(): List<Player> {
+        return players.filter { it.isAlive }
+    }
+
+    fun getSpyPlayers(): List<Player> {
+        return getAlivePlayers().filter { it.isSpy }
+    }
+
+    fun addPoints(playerId: Int) {
+        updatePlayer(playerId) { p ->
+            p.copy(points = p.points + 1)
+        }
+    }
+
+    fun restartForNewRound() {
+        players.forEach { player ->
+            updatePlayer(player.id) { p ->
+                p.copy(
+                    hand = emptyList(),
+                    playedCards = emptyList(),
+                    isSpy = false,
+                    isProtected = false,
+                    isAlive = true
+                )
+            }
+        }
+    }
+
+    fun getPlayerName(id: Int): String {
+        return players.find { it.id == id }?.name ?: ""
+    }
 }

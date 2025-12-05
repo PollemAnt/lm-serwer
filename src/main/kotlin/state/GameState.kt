@@ -9,19 +9,22 @@ import com.example.state.effects.CardEffectResolver
 import com.example.state.handler.ChancellorHandler
 import com.example.state.managers.DeckManager
 import com.example.state.managers.PlayerManager
+import com.example.state.managers.RoundManager
 import com.example.state.managers.TurnManager
 import kotlinx.serialization.Serializable
 
 class GameState {
     private val playerManager = PlayerManager()
     private val deckManager = DeckManager()
-    private var turnManager: TurnManager = TurnManager(playerManager, deckManager)
+    private val turnManager = TurnManager(playerManager, deckManager)
     private val chancellorHandler = ChancellorHandler(playerManager, deckManager)
+    private val roundManager = RoundManager(playerManager, deckManager, turnManager)
     private val maxPlayers = 2
     private var moveValidator: MoveValidator = MoveValidator(
         playerManager,
         turnManager
     ) { chancellorHandler.getState() }
+
 
     fun addPlayer(name: String): Player? {
         val player = playerManager.addPlayer(name) ?: return null
@@ -30,16 +33,7 @@ class GameState {
     }
 
     private fun startGame() {
-        deckManager.resetAndShuffle()
-        deckManager.drawSecretCard()
-        turnManager.setFirstPlayer()
-
-        playerManager.getAll().forEach { player ->
-            val card = deckManager.draw()
-            if (card != null) playerManager.addCardToHand(player.id, card)
-        }
-
-        turnManager.forceDrawForActivePlayer()
+        roundManager.prepareRound()
     }
 
     fun getState(): GameSnapshot {
@@ -64,12 +58,18 @@ class GameState {
             deckManager
         ).resolve(request)
 
-        turnManager.advanceTurn()
+        val isRoundEnded = roundManager.prepareNewRoundIfNeeded()
+
+        if (!isRoundEnded) {
+            turnManager.advanceTurn()
+        }
 
         return MoveResult.Success(
-            feedback,
-            "Gracz ${player.name} wykonał ruch",
-            turnManager.getActivePlayerId() ?: 0
+            feedback = feedback,
+            messageToAll = "Gracz ${player.name} wykonał ruch",
+            nextPlayerId = turnManager.getActivePlayerId() ?: 0,
+            isRoundEnded = isRoundEnded,
+            roundSummary = roundManager.getRoundSummary()
         )
     }
 
@@ -88,10 +88,11 @@ class GameState {
         deckManager.resetAndShuffle()
         deckManager.drawSecretCard()
         turnManager.setFirstPlayer()
+        roundManager.resetRound()
     }
 
     fun getPlayers(): List<Player> {
-       return playerManager.getAll()
+        return playerManager.getAll()
     }
 
     fun drawCardForChancellor(playerId: Int, card: Card) {
