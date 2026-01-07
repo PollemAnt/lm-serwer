@@ -1,15 +1,21 @@
 package com.example.state.managers
 
 import com.example.models.Card
+import com.example.models.CardCount
 import com.example.models.DeckFactory
 
 class DeckManager {
 
     private var deck: MutableList<Card> = mutableListOf()
     private var secretCard: Card? = null
+    var deckComposition: List<CardCount> = DeckFactory.createDefaultDeckComposition()
+
+    fun updateDeckComposition(newComposition: List<CardCount>) {
+        deckComposition = newComposition
+    }
 
     fun resetAndShuffle() {
-        deck = DeckFactory.createDeck().shuffled().toMutableList()
+        deck = DeckFactory.createDeck(deckComposition).shuffled().toMutableList()
         secretCard = null
     }
 

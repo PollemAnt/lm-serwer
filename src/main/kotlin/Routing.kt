@@ -3,6 +3,7 @@ package com.example
 import com.example.com.example.ConnectionManager
 import com.example.models.Card
 import com.example.models.CardPlayedEvent
+import com.example.models.GameConfig
 import com.example.models.PlayerJoinEvent
 import com.example.models.PlayerJoinRequest
 import com.example.state.GameState
@@ -203,6 +204,15 @@ fun Application.configureRouting() {
             }
 
             call.respond(player)
+        }
+
+        get("/getGameConfig"){
+            call.respond(gameState.getGameConfig())
+        }
+
+        post("/updateGameConfig"){
+            val request = call.receive<GameConfig>()
+            gameState.updateGameConfig(request)
         }
     }
 }

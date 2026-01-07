@@ -1,11 +1,12 @@
 package com.example.models
 
 object DeckFactory {
-    fun createDeck(): MutableList<Card> {
+
+    fun createDeck(composition: List<CardCount>): List<Card> {
         val deck = mutableListOf<Card>()
         var idCounter = 1
 
-        repeat(2) {
+        repeat(composition[0].count) {
             deck.add(
                 Card(
                     id = idCounter++,
@@ -15,7 +16,7 @@ object DeckFactory {
                 )
             )
         }
-        repeat(6) {
+        repeat(composition[1].count) {
             deck.add(
                 Card(
                     id = idCounter++,
@@ -25,7 +26,7 @@ object DeckFactory {
                 )
             )
         }
-        repeat(2) {
+        repeat(composition[2].count) {
             deck.add(
                 Card(
                     id = idCounter++,
@@ -35,7 +36,7 @@ object DeckFactory {
                 )
             )
         }
-        repeat(2) {
+        repeat(composition[3].count) {
             deck.add(
                 Card(
                     id = idCounter++,
@@ -45,7 +46,7 @@ object DeckFactory {
                 )
             )
         }
-        repeat(2) {
+        repeat(composition[4].count) {
             deck.add(
                 Card(
                     id = idCounter++,
@@ -55,7 +56,7 @@ object DeckFactory {
                 )
             )
         }
-        repeat(2) {
+        repeat(composition[5].count) {
             deck.add(
                 Card(
                     id = idCounter++,
@@ -65,7 +66,7 @@ object DeckFactory {
                 )
             )
         }
-        repeat(2) {
+        repeat(composition[6].count) {
             deck.add(
                 Card(
                     id = idCounter++,
@@ -75,7 +76,7 @@ object DeckFactory {
                 )
             )
         }
-        repeat(1) {
+        repeat(composition[7].count) {
             deck.add(
                 Card(
                     id = idCounter++,
@@ -85,7 +86,7 @@ object DeckFactory {
                 )
             )
         }
-        repeat(1) {
+        repeat(composition[8].count) {
             deck.add(
                 Card(
                     id = idCounter++,
@@ -95,7 +96,7 @@ object DeckFactory {
                 )
             )
         }
-        repeat(1) {
+        repeat(composition[9].count) {
             deck.add(
                 Card(
                     id = idCounter++,
@@ -107,5 +108,20 @@ object DeckFactory {
         }
 
         return deck
+    }
+
+    fun createDefaultDeckComposition(): List<CardCount> {
+        return listOf(
+            CardCount("Szpieg", 0, 2),
+            CardCount("Strażnik", 1, 6),
+            CardCount("Kapłan", 2, 2),
+            CardCount("Baron", 3, 2),
+            CardCount("Służaca", 4, 2),
+            CardCount("Książe", 5, 2),
+            CardCount("Kanclerz", 6, 2),
+            CardCount("Król", 7, 1),
+            CardCount("Hrabina", 8, 1),
+            CardCount("Księżniczka", 9, 1)
+        )
     }
 }

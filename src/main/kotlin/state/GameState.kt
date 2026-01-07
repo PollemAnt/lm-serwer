@@ -2,6 +2,7 @@ package com.example.state
 
 import com.example.MoveRequest
 import com.example.models.Card
+import com.example.models.GameConfig
 import com.example.models.GameSnapshot
 import com.example.models.MoveResult
 import com.example.models.Player
@@ -19,16 +20,27 @@ class GameState {
     private val turnManager = TurnManager(playerManager, deckManager)
     private val chancellorHandler = ChancellorHandler(playerManager, deckManager)
     private val roundManager = RoundManager(playerManager, deckManager, turnManager)
-    private val maxPlayers = 2
+
+    private var gameConfig = GameConfig(2, deckManager.deckComposition)
+
     private var moveValidator: MoveValidator = MoveValidator(
         playerManager,
         turnManager
     ) { chancellorHandler.getState() }
 
 
+    fun updateGameConfig(config: GameConfig) {
+        gameConfig = config
+        deckManager.updateDeckComposition(gameConfig.deckComposition)
+    }
+
+    fun getGameConfig(): GameConfig {
+        return gameConfig
+    }
+
     fun addPlayer(name: String): Player? {
         val player = playerManager.addPlayer(name) ?: return null
-        if (playerManager.count == maxPlayers) startGame()
+        if (playerManager.count == gameConfig.maxPlayers) startGame()
         return player
     }
 
@@ -54,7 +66,7 @@ class GameState {
         playerManager.addPlayedCard(player.id, request.card)
 
         val feedback = CardEffectResolver(
-            playerManager.getAll(),
+            playerManager,
             deckManager
         ).resolve(request)
 
@@ -74,7 +86,7 @@ class GameState {
     }
 
     fun completeChancellorMove(playerId: Int, cardToKeep: Card): MoveResult {
-        val result = chancellorHandler.complete(playerId, cardToKeep)
+        val result = chancellorHandler.completeChancellorMove(playerId, cardToKeep)
 
         if (result is MoveResult.Success) {
             turnManager.advanceTurn()
@@ -100,7 +112,7 @@ class GameState {
         chancellorHandler.drawCardForChancellor(playerId, card)
     }
 
-    fun getPlayerHandForPriest(playerId: Int, targetId  : Int):List<Card>? {
+    fun getPlayerHandForPriest(playerId: Int, targetId: Int): List<Card>? {
         if (playerId != turnManager.getActivePlayerId()) return null
 
         return playerManager.getPlayerHand(targetId)
