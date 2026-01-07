@@ -3,6 +3,7 @@ package com.example.state.handler
 import com.example.models.Card
 import com.example.models.CardPlayedFeedback
 import com.example.models.MoveResult
+import com.example.models.Player
 import com.example.state.ChancellorState
 import com.example.state.managers.DeckManager
 import com.example.state.managers.PlayerManager
@@ -32,7 +33,7 @@ class ChancellorHandler(
         }
     }
 
-    fun complete(playerId: Int, cardToKeep: Card): MoveResult {
+    fun completeChancellorMove(playerId: Int, cardToKeep: Card): MoveResult {
         val state = chancellorState ?: return MoveResult.Error("Brak oczekującego ruchu kanclerza")
         if (state.playerId != playerId) return MoveResult.Error("Nieprawidłowy gracz dla ruchu kanclerza")
 
@@ -41,6 +42,8 @@ class ChancellorHandler(
         if (!player.hand.contains(cardToKeep)) {
             return MoveResult.Error("Wybrana karta nie znajduje się w ręce")
         }
+
+        updatePlayerState(playerId) { it.copy(isProtected = false) }
 
         val cardsToDiscard = player.hand - cardToKeep
         deckManager.putOnBottom(cardsToDiscard)
@@ -56,5 +59,12 @@ class ChancellorHandler(
             messageToAll = "Gracz ${player.name} zakończył ruch kanclerza",
             nextPlayerId = playerId
         )
+    }
+
+    private fun updatePlayerState(playerId: Int, transform: (Player) -> Player) {
+        val index = playerManager.getAll().indexOfFirst { it.id == playerId }
+        if (index != -1) {
+            playerManager.getAll()[index] = transform(playerManager.getAll()[index])
+        }
     }
 }
