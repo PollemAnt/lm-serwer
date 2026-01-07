@@ -5,19 +5,20 @@ import com.example.models.Card
 import com.example.models.CardPlayedFeedback
 import com.example.models.Player
 import com.example.state.managers.DeckManager
+import com.example.state.managers.PlayerManager
 
 
 class CardEffectResolver(
-    private val players: MutableList<Player>,
+    private val playerManager: PlayerManager,
     private val deckManager: DeckManager
 ) {
 
     fun resolve(request: MoveRequest): CardPlayedFeedback {
         println("[ACTION] Rozwiązywanie efektu karty przez CardEffectResolver")
-        val currentPlayer = players.find { it.id == request.playerId }
+        val currentPlayer = playerManager.getAll().find { it.id == request.playerId }
             ?: return CardPlayedFeedback.Standard("Nie znaleziono gracza")
 
-        val targetPlayer = players.firstOrNull { it.id == request.targetPlayerId } ?: currentPlayer
+        val targetPlayer = playerManager.getAll().firstOrNull { it.id == request.targetPlayerId } ?: currentPlayer
         updatePlayerState(currentPlayer.id) { it.copy(isProtected = false) }
         return when (request.card.number) {
             0 -> resolveSpy(currentPlayer)
@@ -37,9 +38,9 @@ class CardEffectResolver(
     }
 
     private fun updatePlayerState(playerId: Int, transform: (Player) -> Player) {
-        val index = players.indexOfFirst { it.id == playerId }
+        val index = playerManager.getAll().indexOfFirst { it.id == playerId }
         if (index != -1) {
-            players[index] = transform(players[index])
+            playerManager.getAll()[index] = transform(playerManager.getAll()[index])
         }
     }
 
