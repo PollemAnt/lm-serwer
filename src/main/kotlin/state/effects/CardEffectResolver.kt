@@ -1,6 +1,7 @@
 package com.example.state.effects
 
-import com.example.MoveRequest
+import com.example.Strings
+import com.example.models.MoveRequest
 import com.example.models.Card
 import com.example.models.CardPlayedFeedback
 import com.example.models.Player
@@ -14,9 +15,8 @@ class CardEffectResolver(
 ) {
 
     fun resolve(request: MoveRequest): CardPlayedFeedback {
-        println("[ACTION] Rozwiązywanie efektu karty przez CardEffectResolver")
         val currentPlayer = playerManager.getAll().find { it.id == request.playerId }
-            ?: return CardPlayedFeedback.Standard("Nie znaleziono gracza")
+            ?: return CardPlayedFeedback.Standard(Strings.get("error.player_not_found"))
 
         val targetPlayer = playerManager.getAll().firstOrNull { it.id == request.targetPlayerId } ?: currentPlayer
         updatePlayerState(currentPlayer.id) { it.copy(isProtected = false) }
@@ -29,10 +29,9 @@ class CardEffectResolver(
             5 -> resolvePrince(currentPlayer, targetPlayer)
             6 -> resolveChancellor(currentPlayer)
             7 -> resolveKing(currentPlayer, targetPlayer)
-            8 -> resolveCountess(currentPlayer)
+            8 -> resolveCountess()
             else -> {
-                println("Zagrano kartę o nieznanym numerze: ${request.card.number}")
-                CardPlayedFeedback.Standard("Zagrano nieznaną kartę.")
+                CardPlayedFeedback.Standard(Strings.get("error.unknown_card_played"))
             }
         }
     }
@@ -65,12 +64,10 @@ class CardEffectResolver(
     private fun checkDiscardedCardEffect(discardedCard: Card, targetPlayer: Player) {
         when (discardedCard.number) {
             9 -> {
-                println("[EFFECT] Gracz ${targetPlayer.name} odrzucił Księżniczkę i przegrywa!")
                 updatePlayerState(targetPlayer.id) { it.copy(isAlive = false) }
             }
 
             0 -> {
-                println("[EFFECT] Gracz ${targetPlayer.name} odrzucił Szpiega. Efekt Szpiega aktywowany.")
                 updatePlayerState(targetPlayer.id) { it.copy(isSpy = true) }
             }
         }
@@ -78,7 +75,6 @@ class CardEffectResolver(
 
 
     private fun resolveSpy(currentPlayer: Player): CardPlayedFeedback {
-        println("Gracz ${currentPlayer.name} użył karty 0 (Szpieg)")
         updatePlayerState(currentPlayer.id) { it.copy(isSpy = true) }
         return CardPlayedFeedback.SpyPlayed(currentPlayer.id)
     }
@@ -88,7 +84,6 @@ class CardEffectResolver(
         currentPlayer: Player,
         targetPlayer: Player
     ): CardPlayedFeedback {
-        println("Gracz ${currentPlayer.name} użył karty 1 (Strażnik)")
         val guessedCardNumber = request.guessCardNumber
         if (guessedCardNumber != null) {
             val opponentCard = targetPlayer.hand.firstOrNull()
@@ -103,13 +98,12 @@ class CardEffectResolver(
                 wasCorrect
             )
         } else {
-            CardPlayedFeedback.Standard("Zagrano strażnika")
+            CardPlayedFeedback.Standard(Strings.get("game.guard_played"))
         }
-        return CardPlayedFeedback.Standard("Zagrano strażnika, ale wystąpił błąd")
+        return CardPlayedFeedback.Standard(Strings.get("error.guard_play_error"))
     }
 
     private fun resolvePriest(currentPlayer: Player, targetPlayer: Player): CardPlayedFeedback {
-        println("Gracz ${currentPlayer.name} użył karty 2 (Kapłan)")
         val opponentCard = targetPlayer.hand.firstOrNull()
         return if (opponentCard != null) {
             CardPlayedFeedback.PriestPlayed(
@@ -118,12 +112,11 @@ class CardEffectResolver(
                 opponentCard.number
             )
         } else {
-            CardPlayedFeedback.Standard("Zagrano Kapłana, ale wystąpił błąd")
+            CardPlayedFeedback.Standard(Strings.get("error.priest_play_error"))
         }
     }
 
     private fun resolveBaron(currentPlayer: Player, targetPlayer: Player): CardPlayedFeedback {
-        println("Gracz ${currentPlayer.name} użył karty 3 (Baron)")
         val playerCard = currentPlayer.hand.firstOrNull()
         val opponentCard = targetPlayer.hand.firstOrNull()
 
@@ -157,11 +150,10 @@ class CardEffectResolver(
                 )
             }
         }
-        return CardPlayedFeedback.Standard("Nie udało się porównać kart")
+        return CardPlayedFeedback.Standard(Strings.get("error.card_compare_failed"))
     }
 
     private fun resolveHandmaid(currentPlayer: Player): CardPlayedFeedback {
-        println("Gracz ${currentPlayer.name} użył karty 4 (Służaca) i jest chroniony do następnej tury.")
         updatePlayerState(currentPlayer.id) { it.copy(isProtected = true) }
         return CardPlayedFeedback.HandmaidPlayed(currentPlayer.id)
     }
@@ -170,7 +162,6 @@ class CardEffectResolver(
         currentPlayer: Player,
         targetPlayer: Player
     ): CardPlayedFeedback {
-        println("Gracz ${currentPlayer.name} użył 5 (Księcia)")
         val discardedCard = targetPlayer.hand.firstOrNull()
 
         if (discardedCard != null) {
@@ -189,7 +180,6 @@ class CardEffectResolver(
     }
 
     private fun resolveChancellor(currentPlayer: Player): CardPlayedFeedback {
-        println("Gracz ${currentPlayer.name} zagrał kanclerza.")
 
         return CardPlayedFeedback.ChancellorPlayed(
             playerId = currentPlayer.id
@@ -197,19 +187,16 @@ class CardEffectResolver(
     }
 
     private fun resolveKing(currentPlayer: Player, targetPlayer: Player): CardPlayedFeedback {
-        println("Gracz ${currentPlayer.name} użył karty 7 (Król)")
         val playerHand = currentPlayer.hand
         val targetHand = targetPlayer.hand
 
         updatePlayerState(currentPlayer.id) { it.copy(hand = targetHand) }
         updatePlayerState(targetPlayer.id) { it.copy(hand = playerHand) }
 
-        println("Gracze ${currentPlayer.name} i ${targetPlayer.name} zamienili się kartami.")
         return CardPlayedFeedback.KingPlayed(currentPlayer.id, targetPlayer.id)
     }
 
-    private fun resolveCountess(currentPlayer: Player): CardPlayedFeedback {
-        println("Gracz ${currentPlayer.name} zagrał kartę nr 8 (Hrabina).")
-        return CardPlayedFeedback.Standard("Zagrano Hrabinę")
+    private fun resolveCountess(): CardPlayedFeedback {
+        return CardPlayedFeedback.Standard(Strings.get("game.countess_played"))
     }
 }

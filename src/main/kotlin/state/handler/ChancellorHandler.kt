@@ -1,5 +1,6 @@
 package com.example.state.handler
 
+import com.example.Strings
 import com.example.models.Card
 import com.example.models.CardPlayedFeedback
 import com.example.models.MoveResult
@@ -34,13 +35,13 @@ class ChancellorHandler(
     }
 
     fun completeChancellorMove(playerId: Int, cardToKeep: Card): MoveResult {
-        val state = chancellorState ?: return MoveResult.Error("Brak oczekującego ruchu kanclerza")
-        if (state.playerId != playerId) return MoveResult.Error("Nieprawidłowy gracz dla ruchu kanclerza")
+        val state = chancellorState ?: return MoveResult.Error(Strings.get("chancellor.no_pending_move"))
+        if (state.playerId != playerId) return MoveResult.Error(Strings.get("chancellor.invalid_player_for_move"))
 
         val player =
-            playerManager.findById(playerId) ?: return MoveResult.Error("Gracz nie znaleziony")
+            playerManager.findById(playerId) ?: return MoveResult.Error(Strings.get("error.player_not_found"))
         if (!player.hand.contains(cardToKeep)) {
-            return MoveResult.Error("Wybrana karta nie znajduje się w ręce")
+            return MoveResult.Error(Strings.get("error.card_not_in_hand"))
         }
 
         updatePlayerState(playerId) { it.copy(isProtected = false) }
@@ -56,7 +57,7 @@ class ChancellorHandler(
 
         return MoveResult.Success(
             feedback = CardPlayedFeedback.ChancellorPlayed(playerId),
-            messageToAll = "Gracz ${player.name} zakończył ruch kanclerza",
+            messageToAll = Strings.format("chancellor.move_finished", playerId),
             nextPlayerId = playerId
         )
     }

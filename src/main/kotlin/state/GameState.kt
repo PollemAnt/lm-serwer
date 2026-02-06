@@ -1,9 +1,10 @@
 package com.example.state
 
-import com.example.MoveRequest
+import com.example.Strings
 import com.example.models.Card
 import com.example.models.GameConfig
 import com.example.models.GameSnapshot
+import com.example.models.MoveRequest
 import com.example.models.MoveResult
 import com.example.models.Player
 import com.example.state.effects.CardEffectResolver
@@ -60,7 +61,7 @@ class GameState {
         moveValidator.validate(request.playerId)?.let { return it }
 
         val player = playerManager.findById(request.playerId)
-            ?: return MoveResult.Error("Gracz nie istnieje")
+            ?: return MoveResult.Error(Strings.get("error.player_not_found"))
 
         playerManager.removeCardFromHand(player.id, request.card)
         playerManager.addPlayedCard(player.id, request.card)
@@ -78,7 +79,7 @@ class GameState {
 
         return MoveResult.Success(
             feedback = feedback,
-            messageToAll = "Gracz ${player.name} wykonał ruch",
+            messageToAll = Strings.format("game.player_move", player.name),
             nextPlayerId = turnManager.getActivePlayerId() ?: 0,
             isRoundEnded = isRoundEnded,
             roundSummary = roundManager.getRoundSummary()

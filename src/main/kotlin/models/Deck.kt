@@ -1,5 +1,7 @@
 package com.example.models
 
+import com.example.Strings
+
 object DeckFactory {
 
     fun createDeck(composition: List<CardCount>): List<Card> {
@@ -11,8 +13,8 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 0,
-                    name = "Szpieg",
-                    description = "Szpieg blabll"
+                    name = Strings.get("card.spy"),
+                    description = Strings.get("card.action.spy")
                 )
             )
         }
@@ -21,8 +23,8 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 1,
-                    name = "Strażnik",
-                    description = "Wybierz innego gracza i spróbuj odgadnąć jego kartę."
+                    name = Strings.get("card.guard"),
+                    description = Strings.get("card.action.guard")
                 )
             )
         }
@@ -31,8 +33,8 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 2,
-                    name = "Kapłan",
-                    description = "Zobacz karte innego gracza"
+                    name = Strings.get("card.priest"),
+                    description = Strings.get("card.action.priest")
                 )
             )
         }
@@ -41,8 +43,8 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 3,
-                    name = "Baron",
-                    description = "Porónaj numer kart z innym graczem"
+                    name = Strings.get("card.baron"),
+                    description = Strings.get("card.action.baron")
                 )
             )
         }
@@ -51,8 +53,8 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 4,
-                    name = "Służąca",
-                    description = "Do końca tej tury jesteś nietykalny"
+                    name = Strings.get("card.handmaid"),
+                    description = Strings.get("card.action.handmaid")
                 )
             )
         }
@@ -61,8 +63,8 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 5,
-                    name = "Książe",
-                    description = "Wyrzuć karte z ręki gracza"
+                    name = Strings.get("card.prince"),
+                    description = Strings.get("card.action.prince")
                 )
             )
         }
@@ -71,8 +73,8 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 6,
-                    name = "Kanclerz",
-                    description = "Zobacz karty z talibla balbla"
+                    name = Strings.get("card.chancellor"),
+                    description = Strings.get("card.action.chancellor")
                 )
             )
         }
@@ -81,8 +83,8 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 7,
-                    name = "Król",
-                    description = "Zamien karty z innym garczem"
+                    name = Strings.get("card.king"),
+                    description = Strings.get("card.action.king")
                 )
             )
         }
@@ -91,8 +93,8 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 8,
-                    name = "Hrabina",
-                    description = "Musisz zagrać hrabine jak dobierzesz ksiecia albo króla"
+                    name = Strings.get("card.countess"),
+                    description = Strings.get("card.action.countess_rule")
                 )
             )
         }
@@ -101,8 +103,8 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 9,
-                    name = "Księżniczka",
-                    description = "Jak odrzucisz lub zagrasz te karte to przegrasz"
+                    name = Strings.get("card.princess"),
+                    description = Strings.get("card.action.princess_rule")
                 )
             )
         }
@@ -112,16 +114,16 @@ object DeckFactory {
 
     fun createDefaultDeckComposition(): List<CardCount> {
         return listOf(
-            CardCount("Szpieg", 0, 2),
-            CardCount("Strażnik", 1, 6),
-            CardCount("Kapłan", 2, 2),
-            CardCount("Baron", 3, 2),
-            CardCount("Służaca", 4, 2),
-            CardCount("Książe", 5, 2),
-            CardCount("Kanclerz", 6, 2),
-            CardCount("Król", 7, 1),
-            CardCount("Hrabina", 8, 1),
-            CardCount("Księżniczka", 9, 1)
+            CardCount(Strings.get("card.spy"), 0, 2),
+            CardCount(Strings.get("card.guard"), 1, 6),
+            CardCount(Strings.get("card.priest"), 2, 2),
+            CardCount(Strings.get("card.baron"), 3, 2),
+            CardCount(Strings.get("card.handmaid"), 4, 2),
+            CardCount(Strings.get("card.prince"), 5, 2),
+            CardCount(Strings.get("card.chancellor"), 6, 2),
+            CardCount(Strings.get("card.king"), 7, 1),
+            CardCount(Strings.get("card.countess"), 8, 1),
+            CardCount(Strings.get("card.princess"), 9, 1)
         )
     }
 }

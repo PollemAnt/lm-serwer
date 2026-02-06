@@ -3,11 +3,14 @@ package com.example
 import com.example.com.example.ConnectionManager
 import com.example.models.Card
 import com.example.models.CardPlayedEvent
+import com.example.models.DrawRequest
 import com.example.models.GameConfig
+import com.example.models.MoveRequest
 import com.example.models.PlayerJoinEvent
 import com.example.models.PlayerJoinRequest
 import com.example.state.GameState
 import com.example.models.MoveResult
+import com.example.models.PriestRequest
 import com.example.models.RoundEndedEvent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -20,10 +23,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame
-import io.ktor.websocket.readText
-import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 
@@ -33,23 +33,17 @@ fun Application.configureRouting() {
 
     routing {
         get("/") {
-            call.respondText("Serwer List Miłosny działa!")
+            call.respondText(Strings.get("hello.message"), ContentType.Text.Plain)
         }
 
         webSocket("/updates") {
-            println("Nowe połączenie ${this.hashCode()}")
-
             ConnectionManager.addConnection(this)
 
             try {
-                incoming.consumeEach { frame ->
-                    if (frame is Frame.Text) {
-                        val text = frame.readText()
-                        println("Od klienta: $text")
-                    }
+                for (frame in incoming) {
+                    if (frame is Frame.Close) break
                 }
             } finally {
-                println("Rozloczono ${this.hashCode()}")
                 ConnectionManager.removeConnection(this)
             }
         }
@@ -65,7 +59,7 @@ fun Application.configureRouting() {
             } else {
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    mapOf("error" to "Maksymalna liczba graczy została osiągnięta")
+                    mapOf("error" to Strings.get("lobby.max_players_reached"))
                 )
             }
 
@@ -104,7 +98,7 @@ fun Application.configureRouting() {
                 }
 
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
-                else -> call.respond(HttpStatusCode.BadRequest, "Nieoczekiwany wynik")
+                else -> call.respond(HttpStatusCode.BadRequest, Strings.get("error.unexpected_result"))
             }
         }
 
@@ -121,8 +115,8 @@ fun Application.configureRouting() {
                             card = Card(
                                 id = -1,
                                 number = 6,
-                                name = "Kanclerz",
-                                description = "Zobacz karty z talibla balbla"
+                                name = Strings.get("card.chancellor"),
+                                description = Strings.get("card.action.chancellor")
                             ),
                             targetPlayerId = request.targetPlayerId,
                             feedback = result.feedback
@@ -131,7 +125,7 @@ fun Application.configureRouting() {
                 }
 
                 is MoveResult.Error -> call.respond(HttpStatusCode.BadRequest, result.message)
-                else -> call.respond(HttpStatusCode.BadRequest, "Nieoczekiwany wynik")
+                else -> call.respond(HttpStatusCode.BadRequest, Strings.get("error.unexpected_result"))
             }
         }
 
@@ -141,7 +135,7 @@ fun Application.configureRouting() {
 
             val player = gameState.getPlayers().find { it.id == request.playerId }
             if (player == null) {
-                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to Strings.get("error.player_not_found")))
                 return@post
             }
 
@@ -153,7 +147,7 @@ fun Application.configureRouting() {
 
             val target = gameState.getPlayers().find { it.id == request.targetId }
             if (target == null) {
-                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to Strings.get("error.player_not_found")))
                 return@post
             }
 
@@ -161,7 +155,7 @@ fun Application.configureRouting() {
 
             if (targetHand == null) {
 
-                call.respond(HttpStatusCode.Forbidden, mapOf("error" to "To nie jest twoja tura"))
+                call.respond(HttpStatusCode.Forbidden, mapOf("error" to Strings.get("error.not_your_turn")))
 
                 return@post
             }
@@ -172,13 +166,13 @@ fun Application.configureRouting() {
         get("/hand/{playerId}") {
             val playerId = call.parameters["playerId"]?.toIntOrNull()
             if (playerId == null) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Niepoprawne ID gracza"))
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to Strings.get("error.invalid_player_id")))
                 return@get
             }
 
             val player = gameState.getPlayers().find { it.id == playerId }
             if (player == null) {
-                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to Strings.get("error.player_not_found")))
                 return@get
             }
 
@@ -193,13 +187,13 @@ fun Application.configureRouting() {
         get("/player/{playerId}") {
             val playerId = call.parameters["playerId"]?.toIntOrNull()
             if (playerId == null) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Niepoprawne ID gracza"))
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to Strings.get("error.invalid_player_id")))
                 return@get
             }
 
             val player = gameState.getPlayers().find { it.id == playerId }
             if (player == null) {
-                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Gracz nie istnieje"))
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to Strings.get("error.player_not_found")))
                 return@get
             }
 
@@ -213,21 +207,7 @@ fun Application.configureRouting() {
         post("/updateGameConfig"){
             val request = call.receive<GameConfig>()
             gameState.updateGameConfig(request)
+            call.respond(HttpStatusCode.OK)
         }
     }
 }
-
-
-@Serializable
-data class DrawRequest(val playerId: Int, val card: Card)
-
-@Serializable
-data class MoveRequest(
-    val playerId: Int,
-    val card: Card,
-    val targetPlayerId: Int?,
-    val guessCardNumber: Int?
-)
-
-@Serializable
-data class PriestRequest(val playerId: Int, val targetId: Int)
