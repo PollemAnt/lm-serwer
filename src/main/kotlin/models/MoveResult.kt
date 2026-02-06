@@ -10,6 +10,8 @@ sealed interface MoveResult {
         val feedback: CardPlayedFeedback,
         val messageToAll: String,
         val nextPlayerId: Int,
+        val isRoundEnded: Boolean = false,
+        val roundSummary : RoundSummary? = null
     ) : MoveResult
 
     @Serializable

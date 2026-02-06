@@ -1,111 +1,129 @@
 package com.example.models
 
+import com.example.Strings
+
 object DeckFactory {
-    fun createDeck(): MutableList<Card> {
+
+    fun createDeck(composition: List<CardCount>): List<Card> {
         val deck = mutableListOf<Card>()
         var idCounter = 1
 
-        repeat(2) {
+        repeat(composition[0].count) {
             deck.add(
                 Card(
                     id = idCounter++,
                     number = 0,
-                    name = "Szpieg",
-                    description = "Szpieg blabll"
+                    name = Strings.get("card.spy"),
+                    description = Strings.get("card.action.spy")
                 )
             )
         }
-        repeat(6) {
+        repeat(composition[1].count) {
             deck.add(
                 Card(
                     id = idCounter++,
                     number = 1,
-                    name = "Strażnik",
-                    description = "Wybierz innego gracza i spróbuj odgadnąć jego kartę."
+                    name = Strings.get("card.guard"),
+                    description = Strings.get("card.action.guard")
                 )
             )
         }
-        repeat(2) {
+        repeat(composition[2].count) {
             deck.add(
                 Card(
                     id = idCounter++,
                     number = 2,
-                    name = "Kapłan",
-                    description = "Zobacz karte innego gracza"
+                    name = Strings.get("card.priest"),
+                    description = Strings.get("card.action.priest")
                 )
             )
         }
-        repeat(2) {
+        repeat(composition[3].count) {
             deck.add(
                 Card(
                     id = idCounter++,
                     number = 3,
-                    name = "Baron",
-                    description = "Porónaj numer kart z innym graczem"
+                    name = Strings.get("card.baron"),
+                    description = Strings.get("card.action.baron")
                 )
             )
         }
-        repeat(2) {
+        repeat(composition[4].count) {
             deck.add(
                 Card(
                     id = idCounter++,
                     number = 4,
-                    name = "Służąca",
-                    description = "Do końca tej tury jesteś nietykalny"
+                    name = Strings.get("card.handmaid"),
+                    description = Strings.get("card.action.handmaid")
                 )
             )
         }
-        repeat(2) {
+        repeat(composition[5].count) {
             deck.add(
                 Card(
                     id = idCounter++,
                     number = 5,
-                    name = "Książe",
-                    description = "Wyrzuć karte z ręki gracza"
+                    name = Strings.get("card.prince"),
+                    description = Strings.get("card.action.prince")
                 )
             )
         }
-        repeat(2) {
+        repeat(composition[6].count) {
             deck.add(
                 Card(
                     id = idCounter++,
                     number = 6,
-                    name = "Kanclerz",
-                    description = "Zobacz karty z talibla balbla"
+                    name = Strings.get("card.chancellor"),
+                    description = Strings.get("card.action.chancellor")
                 )
             )
         }
-        repeat(1) {
+        repeat(composition[7].count) {
             deck.add(
                 Card(
                     id = idCounter++,
                     number = 7,
-                    name = "Król",
-                    description = "Zamien karty z innym garczem"
+                    name = Strings.get("card.king"),
+                    description = Strings.get("card.action.king")
                 )
             )
         }
-        repeat(1) {
+        repeat(composition[8].count) {
             deck.add(
                 Card(
                     id = idCounter++,
                     number = 8,
-                    name = "Hrabina",
-                    description = "Musisz zagrać hrabine jak dobierzesz ksiecia albo króla"
+                    name = Strings.get("card.countess"),
+                    description = Strings.get("card.action.countess_rule")
                 )
             )
         }
-        repeat(1) {
+        repeat(composition[9].count) {
             deck.add(
                 Card(
                     id = idCounter++,
                     number = 9,
-                    name = "Księżniczka",
-                    description = "Jak odrzucisz lub zagrasz te karte to przegrasz"
+                    name = Strings.get("card.princess"),
+                    description = Strings.get("card.action.princess_rule")
                 )
             )
         }
 
         return deck
+    }
+
+    fun createDefaultDeckComposition(): List<CardCount> {
+        return listOf(
+            CardCount(Strings.get("card.spy"), 0, 2),
+            CardCount(Strings.get("card.guard"), 1, 6),
+            CardCount(Strings.get("card.priest"), 2, 2),
+            CardCount(Strings.get("card.baron"), 3, 2),
+            CardCount(Strings.get("card.handmaid"), 4, 2),
+            CardCount(Strings.get("card.prince"), 5, 2),
+            CardCount(Strings.get("card.chancellor"), 6, 2),
+            CardCount(Strings.get("card.king"), 7, 1),
+            CardCount(Strings.get("card.countess"), 8, 1),
+            CardCount(Strings.get("card.princess"), 9, 1)
+        )
     }
 }

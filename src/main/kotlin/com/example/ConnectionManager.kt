@@ -9,7 +9,7 @@ import kotlinx.serialization.json.Json
 
 object ConnectionManager {
 
-    private val connections = mutableListOf<WebSocketSession>()
+    private val connections = mutableSetOf<WebSocketSession>()
     private val mutex = Mutex()
 
     suspend fun addConnection(session: WebSocketSession) {
@@ -26,13 +26,17 @@ object ConnectionManager {
 
     suspend fun broadcastEvent(event: GameEventBase) {
         val json = Json.encodeToString(event)
-        mutex.withLock {
-            connections.forEach { session ->
-                try {
-                    session.send(Frame.Text(json))
-                } catch (e: Exception) {
-                    println("Błąd przy wysyłaniu: $e")
-                }
+
+        val snapshot = mutex.withLock {
+            connections.toList()
+        }
+
+        snapshot.forEach { session ->
+            try {
+                session.send(Frame.Text(json))
+            } catch (e: Exception) {
+                println("WS send error, removing session: $e")
+                removeConnection(session)
             }
         }
     }

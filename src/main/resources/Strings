@@ -1,0 +1,55 @@
+# --- Ogólne ---
+hello.message=Serwer List Miłosny działa!
+error.unexpected_result=Nieoczekiwany wynik
+error.invalid_player_id=Niepoprawne ID gracza
+error.not_your_turn=Nie twoja tura
+error.no_players=Brak graczy
+
+# --- Gracze ---
+error.player_not_found=Nie znaleziono gracza
+error.player_already_exists=Gracz o podanej nazwie już istnieje
+error.invalid_player_for_chancellor_move=Nieprawidłowy gracz dla ruchu kanclerza
+
+
+# --- Karty / Ruchy ---
+error.card_not_in_hand=Wybrana karta nie znajduje się w ręce
+error.unknown_card_played=Zagrano nieznaną kartę
+error.guard_play_error=Zagrano strażnika, ale wystąpił błąd
+error.priest_play_error=Zagrano Kapłana, ale wystąpił błąd
+error.card_compare_failed=Nie udało się porównać kart
+
+game.player_move=Gracz {0} wykonał ruch
+game.guard_played=Zagrano strażnika
+game.countess_played=Zagrano Hrabinę
+
+# --- Opisy akcji kart ---
+card.action.spy=Jeśli jesteś jedynym żywym graczem z zagranym Szpiegiem, zyskujesz punkt
+card.action.guard=Wybierz innego gracza i spróbuj odgadnąć jego kartę.
+card.action.priest=Zobacz kartę innego gracza
+card.action.baron=Porównaj numer kart z innym graczem
+card.action.handmaid=Do końca tej tury jesteś nietykalny
+card.action.prince=Wyrzuć kartę z ręki gracza
+card.action.chancellor=Zobacz karty (TODO)
+card.action.king=Zamień karty z innym graczem
+card.action.countess_rule=Musisz zagrać Hrabinę, jeśli dobierzesz Księcia albo Króla
+card.action.princess_rule=Jeśli odrzucisz lub zagrasz tę kartę, przegrywasz
+
+# --- Kanclerz ---
+chancellor.waiting_for_card_selection=Trwa oczekiwanie na wybór karty przez kanclerza
+chancellor.no_pending_move=Brak oczekującego ruchu kanclerza
+chancellor.move_finished=Gracz {0} zakończył ruch kanclerza
+
+# --- Lobby ---
+lobby.max_players_reached=Maksymalna liczba graczy została osiągnięta
+
+# --- Karty (nazwy) ---
+card.spy=Szpieg
+card.guard=Strażnik
+card.priest=Kapłan
+card.baron=Baron
+card.handmaid=Służąca
+card.prince=Książę
+card.chancellor=Kanclerz
+card.king=Król
+card.countess=Hrabina
+card.princess=Księżniczka
