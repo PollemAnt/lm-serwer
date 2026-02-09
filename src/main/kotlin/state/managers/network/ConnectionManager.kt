@@ -1,4 +1,4 @@
-package com.example.com.example
+package state.managers.network
 
 import com.example.models.GameEventBase
 import io.ktor.websocket.Frame
@@ -41,5 +41,3 @@ object ConnectionManager {
         }
     }
 }
-
-
