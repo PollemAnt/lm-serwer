@@ -7,7 +7,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
-object ConnectionManager {
+class ConnectionManager {
 
     private val connections = mutableSetOf<WebSocketSession>()
     private val mutex = Mutex()

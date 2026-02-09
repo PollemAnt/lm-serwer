@@ -26,7 +26,8 @@ import state.managers.network.ConnectionManager
 fun Application.configureRouting() {
 
     val gameState = GameState()
-    val gameService = GameService(gameState, ConnectionManager)
+    val connectionManager = ConnectionManager()
+    val gameService = GameService(gameState, connectionManager)
 
     routing {
         get("/") {
@@ -34,14 +35,14 @@ fun Application.configureRouting() {
         }
 
         webSocket("/updates") {
-            ConnectionManager.addConnection(this)
+            connectionManager.addConnection(this)
 
             try {
                 for (frame in incoming) {
                     if (frame is Frame.Close) break
                 }
             } finally {
-                ConnectionManager.removeConnection(this)
+                connectionManager.removeConnection(this)
             }
         }
 
