@@ -16,7 +16,7 @@ class PlayerManager {
     fun findById(id: Int): Player? =
         players.find { it.id == id }
 
-    fun addPlayer(name: String): Player? {
+    fun addPlayer(name: String): Player {
         val player = Player(id = idGenerator.getAndIncrement(), name = name)
         players.add(player)
         return player

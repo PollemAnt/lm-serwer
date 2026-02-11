@@ -7,7 +7,11 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
-class ConnectionManager {
+interface ConnectionManager {
+    suspend fun broadcastEvent(event: GameEventBase)
+}
+
+class WebSocketConnectionManager : ConnectionManager {
 
     private val connections = mutableSetOf<WebSocketSession>()
     private val mutex = Mutex()
@@ -24,7 +28,7 @@ class ConnectionManager {
         }
     }
 
-    suspend fun broadcastEvent(event: GameEventBase) {
+    override suspend fun broadcastEvent(event: GameEventBase) {
         val json = Json.encodeToString(event)
 
         val snapshot = mutex.withLock {

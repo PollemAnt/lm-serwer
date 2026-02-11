@@ -20,13 +20,13 @@ import io.ktor.server.routing.routing
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame
 import kotlinx.serialization.json.Json
-import state.managers.network.ConnectionManager
+import state.managers.network.WebSocketConnectionManager
 
 
 fun Application.configureRouting() {
 
     val gameState = GameState()
-    val connectionManager = ConnectionManager()
+    val connectionManager = WebSocketConnectionManager()
     val gameService = GameService(gameState, connectionManager)
 
     routing {

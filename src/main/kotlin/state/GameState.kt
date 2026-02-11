@@ -40,9 +40,17 @@ class GameState {
     }
 
     fun addPlayer(name: String): Player? {
-        val player = playerManager.addPlayer(name) ?: return null
+        var player: Player? = null
+        if (playerManager.count < gameConfig.maxPlayers) {
+            player = playerManager.addPlayer(name)
+        }
         if (playerManager.count == gameConfig.maxPlayers) startGame()
         return player
+    }
+
+    //For tests
+    fun startGameForTest() {
+        startGame()
     }
 
     private fun startGame() {
@@ -62,6 +70,8 @@ class GameState {
 
         val player = playerManager.findById(request.playerId)
             ?: return MoveResult.Error(Strings.get("error.player_not_found"))
+
+        if (request.card !in player.hand) return MoveResult.Error(Strings.get("error.card_not_in_hand"))
 
         playerManager.removeCardFromHand(player.id, request.card)
         playerManager.addPlayedCard(player.id, request.card)
