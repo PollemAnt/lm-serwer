@@ -29,15 +29,16 @@ class GameState {
         turnManager
     ) { chancellorHandler.getState() }
 
+    fun getPlayerById(id: Int): Player? = playerManager.findById(id)
+    fun playerExists(id: Int): Boolean = playerManager.exists(id)
+    fun getPlayerName(id: Int): String = playerManager.getPlayerName(id)
 
     fun updateGameConfig(config: GameConfig) {
         gameConfig = config
         deckManager.updateDeckComposition(gameConfig.deckComposition)
     }
 
-    fun getGameConfig(): GameConfig {
-        return gameConfig
-    }
+    fun getGameConfig(): GameConfig = gameConfig
 
     fun addPlayer(name: String): Player? {
         var player: Player? = null
@@ -49,9 +50,7 @@ class GameState {
     }
 
     //For tests
-    fun startGameForTest() {
-        startGame()
-    }
+    fun startGameForTest() = startGame()
 
     private fun startGame() {
         roundManager.prepareRound()
@@ -68,10 +67,11 @@ class GameState {
     fun makeMove(request: MoveRequest): MoveResult {
         moveValidator.validate(request.playerId)?.let { return it }
 
-        val player = playerManager.findById(request.playerId)
+        val player = getPlayerById(request.playerId)
             ?: return MoveResult.Error(Strings.get("error.player_not_found"))
 
-        if (request.card !in player.hand) return MoveResult.Error(Strings.get("error.card_not_in_hand"))
+        if (request.card !in player.hand)
+            return MoveResult.Error(Strings.get("error.card_not_in_hand"))
 
         playerManager.removeCardFromHand(player.id, request.card)
         playerManager.addPlayedCard(player.id, request.card)
@@ -114,10 +114,6 @@ class GameState {
         roundManager.resetRound()
     }
 
-    fun getPlayers(): List<Player> {
-        return playerManager.getAll()
-    }
-
     fun drawCardForChancellor(playerId: Int, card: Card) {
         if (playerId != turnManager.getActivePlayerId()) return
         chancellorHandler.drawCardForChancellor(playerId, card)
@@ -125,11 +121,9 @@ class GameState {
 
     fun getPlayerHandForPriest(playerId: Int, targetId: Int): List<Card>? {
         if (playerId != turnManager.getActivePlayerId()) return null
-
         return playerManager.getPlayerHand(targetId)
     }
 }
-
 
 @Serializable
 data class ChancellorState(

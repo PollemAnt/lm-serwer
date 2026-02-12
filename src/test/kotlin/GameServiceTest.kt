@@ -59,13 +59,13 @@ class GameServiceTest {
 
         gameState.startGameForTest()
 
-        val actualP1 = gameState.getPlayers().first { it.id == p1.id }
-        val actualP2 = gameState.getPlayers().first { it.id == p2.id }
+        val actualP1 = gameState.getPlayerById(p1.id)
+        val actualP2 = gameState.getPlayerById(p2.id)
 
         val move = MoveRequest(
-            playerId = actualP1.id,
+            playerId = actualP1!!.id,
             card = actualP1.hand.first(),
-            targetPlayerId = actualP2.id,
+            targetPlayerId = actualP2!!.id,
             guessCardNumber = null
         )
 
@@ -85,13 +85,13 @@ class GameServiceTest {
 
         gameState.startGameForTest()
 
-        val actualP1 = gameState.getPlayers().first { it.id == p1.id }
-        val actualP2 = gameState.getPlayers().first { it.id == p2.id }
+        val actualP1 = gameState.getPlayerById(p1.id)
+        val actualP2 = gameState.getPlayerById(p2.id)
 
         val invalidMove = MoveRequest(
-            playerId = actualP2.id,
+            playerId = actualP2!!.id,
             card = actualP2.hand.first(),
-            targetPlayerId = actualP1.id,
+            targetPlayerId = actualP1!!.id,
             guessCardNumber = null
         )
 

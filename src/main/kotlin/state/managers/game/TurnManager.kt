@@ -10,30 +10,39 @@ class TurnManager(
     private var activeIndex: Int = 0
 
     val currentPlayer: Player?
-        get() = playerManager.getAll().getOrNull(activeIndex)
+        get() = playerManager.getByIndex(activeIndex)
 
-    fun setFirstPlayer(playerId : Int = 0) {
-        activeIndex = playerId
+    fun setFirstPlayer(playerId: Int = 0) {
+        activeIndex = playerManager.getIndexById(playerId) ?: 0
     }
 
     fun advanceTurn() {
-        val players = playerManager.getAll()
-        if (players.isEmpty()) return
+        val playersCount = playerManager.count
+        if (playersCount == 0) return
 
-        activeIndex = (activeIndex + 1) % players.size
+        activeIndex = (activeIndex + 1) % playersCount
 
         val card = deckManager.draw()
         if (card != null) {
-            playerManager.addCardToHand(players[activeIndex].id, card)
+            currentPlayer?.id?.let { playerId ->
+                playerManager.addCardToHand(playerId, card)
+            }
         }
     }
 
     fun forceDrawForActivePlayer() {
         val card = deckManager.draw()
-        if (card != null && currentPlayer != null) {
-            playerManager.addCardToHand(currentPlayer!!.id, card)
+        if (card != null) {
+            currentPlayer?.id?.let { playerId ->
+                playerManager.addCardToHand(playerId, card)
+            }
         }
     }
 
     fun getActivePlayerId(): Int? = currentPlayer?.id
+
+    fun getNextPlayerId(): Int? {
+        val nextIndex = (activeIndex + 1) % playerManager.count
+        return playerManager.getByIndex(nextIndex)?.id
+    }
 }

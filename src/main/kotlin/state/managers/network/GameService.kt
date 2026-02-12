@@ -26,6 +26,9 @@ class GameService(
 
     suspend fun addPlayer(playerName: String): Player {
 
+        require(playerName.isNotBlank()) { "Player name cannot be blank" }
+        require(playerName.length <= 20) { "Player name too long" }
+
         val playerAdded = gameState.addPlayer(playerName)
 
         if (playerAdded != null) {
@@ -58,12 +61,12 @@ class GameService(
     private suspend fun handleRoundEnd(result: MoveResult.Success) {
         delay(1000)
 
-        connectionManager.broadcastEvent(
-            RoundEndedEvent(
-                roundSummary = result.roundSummary
-                    ?: throw GameException("Round summary missing")
-            )
-        )
+        val roundSummary = result.roundSummary
+            ?: run {
+                throw GameException("Round summary missing")
+            }
+
+        connectionManager.broadcastEvent(RoundEndedEvent(roundSummary))
     }
 
     suspend fun completeChancellorMove(request: MoveRequest) {
@@ -89,12 +92,17 @@ class GameService(
 
     }
 
+    fun getPlayer(playerId: Int?): Player {
+        requireNotNull(playerId) { Strings.get("error.invalid_player_id") }
+
+        return gameState.getPlayerById(playerId)
+            ?: throw GameException(Strings.get("error.player_not_found"))
+    }
+
     fun drawCardsForChancellor(request: DrawRequest): List<Card> {
         gameState.drawCardForChancellor(request.playerId, request.card)
 
-        val player = gameState.getPlayers()
-            .find { it.id == request.playerId }
-            ?: throw GameException(Strings.get("error.player_not_found"))
+        val player = getPlayer(request.playerId)
 
         return player.hand
     }
@@ -103,9 +111,9 @@ class GameService(
         request: PriestRequest
     ): List<Card> {
 
-        gameState.getPlayers()
-            .find { it.id == request.targetId }
-            ?: throw GameException(Strings.get("error.player_not_found"))
+        if (!gameState.playerExists(request.targetId)) {
+            throw GameException(Strings.get("error.player_not_found"))
+        }
 
         val targetHand = gameState.getPlayerHandForPriest(
             request.playerId,
@@ -113,18 +121,6 @@ class GameService(
         ) ?: throw GameException(Strings.get("error.not_your_turn"))
 
         return targetHand
-    }
-
-    fun getPlayer(playerId: Int?): Player {
-
-        if (playerId == null) {
-            throw GameException(Strings.get("error.invalid_player_id"))
-        }
-
-        val player = gameState.getPlayers().find { it.id == playerId }
-            ?: throw GameException(Strings.get("error.player_not_found"))
-
-        return player
     }
 
     fun updateGameConfig(config: GameConfig) {

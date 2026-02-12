@@ -2,35 +2,62 @@ package com.example.state.managers
 
 import com.example.models.Card
 import com.example.models.Player
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 class PlayerManager {
-    private var players: MutableList<Player> = mutableListOf()
-    private var idGenerator = AtomicInteger(0)
+
+    private val playersById = ConcurrentHashMap<Int, Player>()
+    private val idGenerator = AtomicInteger(0)
+
+    private val playerOrder = mutableListOf<Int>()
 
     val count: Int
-        get() = players.size
+        get() = playersById.size
 
-    fun getAll(): MutableList<Player> = players
+    fun findById(id: Int): Player? = playersById[id]
 
-    fun findById(id: Int): Player? =
-        players.find { it.id == id }
+    fun exists(id: Int): Boolean = playersById.containsKey(id)
+
+
+    fun getByIndex(index: Int): Player? {
+        if (index !in playerOrder.indices) return null
+        val id = playerOrder[index]
+        return playersById[id]
+    }
+
+
+    fun getIndexById(id: Int): Int? {
+        if (!playersById.containsKey(id)) return null
+        return playerOrder.indexOf(id).takeIf { it != -1 }
+    }
 
     fun addPlayer(name: String): Player {
         val player = Player(id = idGenerator.getAndIncrement(), name = name)
-        players.add(player)
+        playersById[player.id] = player
+        playerOrder.add(player.id)
         return player
     }
 
-    fun reset() {
-        players.clear()
-        idGenerator.set(0)
+    fun getAll(): List<Player> {
+        return playerOrder.mapNotNull { id -> playersById[id] }
     }
 
     fun updatePlayer(playerId: Int, transform: (Player) -> Player) {
-        players = players.map { p ->
-            if (p.id == playerId) transform(p) else p
-        }.toMutableList()
+        playersById.computeIfPresent(playerId) { _, player ->
+            transform(player)
+        }
+    }
+
+    fun removePlayer(playerId: Int): Player? {
+        playerOrder.remove(playerId)
+        return playersById.remove(playerId)
+    }
+
+    fun reset() {
+        playersById.clear()
+        playerOrder.clear()
+        idGenerator.set(0)
     }
 
     fun addCardToHand(playerId: Int, card: Card) {
@@ -38,6 +65,12 @@ class PlayerManager {
             p.copy(hand = p.hand + card)
         }
     }
+
+    fun getPlayerName(id: Int): String =
+        playersById[id]?.name ?: ""
+
+    fun getPlayerHand(playerId: Int): List<Card>? =
+        playersById[playerId]?.hand
 
     fun removeCardFromHand(playerId: Int, card: Card) {
         updatePlayer(playerId) { p ->
@@ -51,17 +84,15 @@ class PlayerManager {
         }
     }
 
-    fun onlyOnePlayerIsAlive(): Boolean {
-        return players.count { it.isAlive } == 1
-    }
+    fun onlyOnePlayerIsAlive(): Boolean =
+         playersById.values.count { it.isAlive } == 1
 
-    fun getAlivePlayers(): List<Player> {
-        return players.filter { it.isAlive }
-    }
 
-    fun getSpyPlayers(): List<Player> {
-        return getAlivePlayers().filter { it.isSpy }
-    }
+    fun getAlivePlayers(): List<Player> =
+        playersById.values.filter { it.isAlive }
+
+    fun getSpyPlayers(): List<Player> =
+        getAlivePlayers().filter { it.isSpy }
 
     fun addPoints(playerId: Int) {
         updatePlayer(playerId) { p ->
@@ -70,24 +101,14 @@ class PlayerManager {
     }
 
     fun restartForNewRound() {
-        players.forEach { player ->
-            updatePlayer(player.id) { p ->
-                p.copy(
-                    hand = emptyList(),
-                    playedCards = emptyList(),
-                    isSpy = false,
-                    isProtected = false,
-                    isAlive = true
-                )
-            }
+        playersById.replaceAll { _, player ->
+            player.copy(
+                hand = emptyList(),
+                playedCards = emptyList(),
+                isSpy = false,
+                isProtected = false,
+                isAlive = true
+            )
         }
-    }
-
-    fun getPlayerName(id: Int): String {
-        return players.find { it.id == id }?.name ?: ""
-    }
-
-    fun getPlayerHand(playerId: Int): List<Card>? {
-        return players.find { it.id == playerId }?.hand
     }
 }
