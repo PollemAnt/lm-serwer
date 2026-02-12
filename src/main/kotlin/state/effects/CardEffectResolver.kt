@@ -37,10 +37,7 @@ class CardEffectResolver(
     }
 
     private fun updatePlayerState(playerId: Int, transform: (Player) -> Player) {
-        val index = playerManager.getAll().indexOfFirst { it.id == playerId }
-        if (index != -1) {
-            playerManager.getAll()[index] = transform(playerManager.getAll()[index])
-        }
+        playerManager.updatePlayer(playerId, transform)
     }
 
     private fun removeCardFromHand(playerId: Int, card: Card) {

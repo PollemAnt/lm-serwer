@@ -1,4 +1,4 @@
-package com.example.com.example
+package state.managers.network
 
 import com.example.models.GameEventBase
 import io.ktor.websocket.Frame
@@ -7,7 +7,11 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
-object ConnectionManager {
+interface ConnectionManager {
+    suspend fun broadcastEvent(event: GameEventBase)
+}
+
+class WebSocketConnectionManager : ConnectionManager {
 
     private val connections = mutableSetOf<WebSocketSession>()
     private val mutex = Mutex()
@@ -24,7 +28,7 @@ object ConnectionManager {
         }
     }
 
-    suspend fun broadcastEvent(event: GameEventBase) {
+    override suspend fun broadcastEvent(event: GameEventBase) {
         val json = Json.encodeToString(event)
 
         val snapshot = mutex.withLock {
@@ -41,5 +45,3 @@ object ConnectionManager {
         }
     }
 }
-
-

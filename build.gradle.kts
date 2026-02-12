@@ -15,18 +15,20 @@ repositories {
     mavenCentral()
 }
 
+
+tasks.test{
+    useJUnitPlatform()
+}
+
 dependencies {
     implementation(libs.ktor.server.core.jvm)
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.config.yaml)
-    testImplementation(libs.ktor.server.test.host)
-    testImplementation(libs.kotlin.test.junit)
 
     implementation(libs.ktor.server.websockets)
 
-    // Logging
     implementation(libs.logback.classic)
     implementation(libs.ktor.server.cors)
     implementation(libs.ktor.server.sessions)
@@ -35,7 +37,7 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation("ch.qos.logback:logback-classic:1.4.7")
-    testImplementation(libs.ktor.server.test)
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.0")
 
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
 }

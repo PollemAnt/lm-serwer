@@ -8,8 +8,9 @@ object Strings {
 
     private val locale = Locale("pl")
 
-    private val bundle: ResourceBundle =
+    private val bundle: ResourceBundle by lazy {
         ResourceBundle.getBundle("messages", locale)
+    }
 
     fun get(key: String): String =
         bundle.getString(key)
