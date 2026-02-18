@@ -34,6 +34,7 @@ class GameService(
 
         if (playerAdded != null) {
             broadcastPlayerJoin(playerAdded)
+            broadcastSnapshot()
 
         } else {
             throw GameException(Strings.get("lobby.max_players_reached"))
@@ -89,7 +90,7 @@ class GameService(
                 )
 
                 broadcastCardPlayed(request, result, chancellorCard)
-
+                broadcastSnapshot()
             }
 
             is MoveResult.Error -> {
