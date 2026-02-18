@@ -4,14 +4,17 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface GameEventBase
+sealed interface ServerEvent
+
+@Serializable
+sealed interface GameEventBase :ServerEvent
 
 @Serializable
 @SerialName("card_played")
 data class CardPlayedEvent(
     val playerId: Int,
     val card: Card,
-    val targetPlayerId: Int? = null,
+    val targetPlayerId: Int,
     val feedback: CardPlayedFeedback
 ) : GameEventBase
 
@@ -20,6 +23,7 @@ data class CardPlayedEvent(
 data class RoundEndedEvent(
     val roundSummary: RoundSummary
 ): GameEventBase
+
 
 @Serializable
 @SerialName("player_joined")
@@ -33,3 +37,9 @@ data class PlayerJoinEvent(
 data class TurnChangedEvent(
     val activePlayerId: Int
 ) : GameEventBase
+
+@Serializable
+@SerialName("snapshot")
+data class GameSnapshotEvent(
+    val snapshot: GameSnapshot
+) : ServerEvent

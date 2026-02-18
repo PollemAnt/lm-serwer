@@ -6,6 +6,7 @@ import com.example.models.CardPlayedEvent
 import com.example.models.DrawRequest
 import com.example.models.GameConfig
 import com.example.models.GameSnapshot
+import com.example.models.GameSnapshotEvent
 import com.example.models.MoveRequest
 import com.example.models.MoveResult
 import com.example.models.Player
@@ -46,7 +47,7 @@ class GameService(
 
             is MoveResult.Success -> {
                 broadcastCardPlayed(request, result)
-
+                broadcastSnapshot()
                 if (result.isRoundEnded) {
                     handleRoundEnd(result)
                 }
@@ -56,6 +57,12 @@ class GameService(
                 throw GameException(result.message)
             }
         }
+    }
+
+    private suspend fun broadcastSnapshot() {
+        connectionManager.broadcastEvent(
+            GameSnapshotEvent(gameState.getState())
+        )
     }
 
     private suspend fun handleRoundEnd(result: MoveResult.Success) {
@@ -144,7 +151,7 @@ class GameService(
             CardPlayedEvent(
                 playerId = request.playerId,
                 card = card ?: request.card,
-                targetPlayerId = request.targetPlayerId,
+                targetPlayerId = request.targetPlayerId ?: -1,
                 feedback = result.feedback
             )
         )
