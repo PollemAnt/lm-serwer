@@ -4,6 +4,7 @@ import com.example.Strings
 import com.example.models.MoveRequest
 import com.example.models.Card
 import com.example.models.CardPlayedFeedback
+import com.example.models.CardType.*
 import com.example.models.Player
 import com.example.state.managers.DeckManager
 import com.example.state.managers.PlayerManager
@@ -18,18 +19,19 @@ class CardEffectResolver(
         val currentPlayer = playerManager.getAll().find { it.id == request.playerId }
             ?: return CardPlayedFeedback.Standard(Strings.get("error.player_not_found"))
 
-        val targetPlayer = playerManager.getAll().firstOrNull { it.id == request.targetPlayerId } ?: currentPlayer
+        val targetPlayer =
+            playerManager.getAll().firstOrNull { it.id == request.targetPlayerId } ?: currentPlayer
         updatePlayerState(currentPlayer.id) { it.copy(isProtected = false) }
-        return when (request.card.number) {
-            0 -> resolveSpy(currentPlayer)
-            1 -> resolveGuard(request, currentPlayer, targetPlayer)
-            2 -> resolvePriest(currentPlayer, targetPlayer)
-            3 -> resolveBaron(currentPlayer, targetPlayer)
-            4 -> resolveHandmaid(currentPlayer)
-            5 -> resolvePrince(currentPlayer, targetPlayer)
-            6 -> resolveChancellor(currentPlayer)
-            7 -> resolveKing(currentPlayer, targetPlayer)
-            8 -> resolveCountess()
+        return when (request.card.cardType) {
+            SPY -> resolveSpy(currentPlayer)
+            GUARD -> resolveGuard(request, currentPlayer, targetPlayer)
+            PRIEST -> resolvePriest(currentPlayer, targetPlayer)
+            BARON -> resolveBaron(currentPlayer, targetPlayer)
+            HANDMAID -> resolveHandmaid(currentPlayer)
+            PRICE -> resolvePrince(currentPlayer, targetPlayer)
+            CHANCELLOR -> resolveChancellor(currentPlayer)
+            KING -> resolveKing(currentPlayer, targetPlayer)
+            COUNTESS -> resolveCountess()
             else -> {
                 CardPlayedFeedback.Standard(Strings.get("error.unknown_card_played"))
             }
@@ -59,14 +61,17 @@ class CardEffectResolver(
     }
 
     private fun checkDiscardedCardEffect(discardedCard: Card, targetPlayer: Player) {
-        when (discardedCard.number) {
-            9 -> {
+        when (discardedCard.cardType) {
+            PRINCESS -> {
                 updatePlayerState(targetPlayer.id) { it.copy(isAlive = false) }
             }
 
-            0 -> {
+            SPY -> {
                 updatePlayerState(targetPlayer.id) { it.copy(isSpy = true) }
             }
+
+            else -> return
+
         }
     }
 

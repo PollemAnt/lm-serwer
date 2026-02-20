@@ -3,6 +3,7 @@ package com.example.state.managers.network
 import com.example.Strings
 import com.example.models.Card
 import com.example.models.CardPlayedEvent
+import com.example.models.CardType
 import com.example.models.DrawRequest
 import com.example.models.GameConfig
 import com.example.models.GameSnapshot
@@ -85,6 +86,7 @@ class GameService(
                 val chancellorCard = Card(
                     id = -1,
                     number = 6,
+                    cardType = CardType.CHANCELLOR,
                     name = Strings.get("card.chancellor"),
                     description = Strings.get("card.action.chancellor")
                 )

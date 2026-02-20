@@ -13,6 +13,7 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 0,
+                    cardType = CardType.SPY,
                     name = Strings.get("card.spy"),
                     description = Strings.get("card.action.spy")
                 )
@@ -23,6 +24,7 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 1,
+                    cardType = CardType.GUARD,
                     name = Strings.get("card.guard"),
                     description = Strings.get("card.action.guard")
                 )
@@ -33,6 +35,7 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 2,
+                    cardType = CardType.PRIEST,
                     name = Strings.get("card.priest"),
                     description = Strings.get("card.action.priest")
                 )
@@ -43,6 +46,7 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 3,
+                    cardType = CardType.BARON,
                     name = Strings.get("card.baron"),
                     description = Strings.get("card.action.baron")
                 )
@@ -53,6 +57,7 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 4,
+                    cardType = CardType.HANDMAID,
                     name = Strings.get("card.handmaid"),
                     description = Strings.get("card.action.handmaid")
                 )
@@ -63,6 +68,7 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 5,
+                    cardType = CardType.PRICE,
                     name = Strings.get("card.prince"),
                     description = Strings.get("card.action.prince")
                 )
@@ -73,6 +79,7 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 6,
+                    cardType = CardType.CHANCELLOR,
                     name = Strings.get("card.chancellor"),
                     description = Strings.get("card.action.chancellor")
                 )
@@ -83,6 +90,7 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 7,
+                    cardType = CardType.KING,
                     name = Strings.get("card.king"),
                     description = Strings.get("card.action.king")
                 )
@@ -93,6 +101,7 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 8,
+                    cardType = CardType.COUNTESS,
                     name = Strings.get("card.countess"),
                     description = Strings.get("card.action.countess_rule")
                 )
@@ -103,6 +112,7 @@ object DeckFactory {
                 Card(
                     id = idCounter++,
                     number = 9,
+                    cardType = CardType.PRINCESS,
                     name = Strings.get("card.princess"),
                     description = Strings.get("card.action.princess_rule")
                 )
