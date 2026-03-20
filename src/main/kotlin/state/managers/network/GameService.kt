@@ -3,6 +3,7 @@ package com.example.state.managers.network
 import com.example.Strings
 import com.example.models.Card
 import com.example.models.CardPlayedEvent
+import com.example.models.CardPlayedFeedback
 import com.example.models.CardType
 import com.example.models.DrawRequest
 import com.example.models.GameConfig
@@ -12,7 +13,7 @@ import com.example.models.MoveRequest
 import com.example.models.MoveResult
 import com.example.models.Player
 import com.example.models.PlayerJoinEvent
-import com.example.models.PriestRequest
+import com.example.models.PriestRevealEvent
 import com.example.models.RoundEndedEvent
 import com.example.state.GameState
 import kotlinx.coroutines.delay
@@ -44,12 +45,40 @@ class GameService(
         return playerAdded
     }
 
+    private suspend fun sendPrivateEvent(
+        playerId: Int,
+        event: PriestRevealEvent
+    ) {
+        connectionManager.sendToPlayer(playerId, event)
+    }
+
     suspend fun handleMove(request: MoveRequest) {
         when (val result = gameState.makeMove(request)) {
 
             is MoveResult.Success -> {
-                broadcastCardPlayed(request, result)
+
+                when (val feedback = result.feedback) {
+
+                    is CardPlayedFeedback.PriestPlayed -> {
+
+                        sendPrivateEvent(
+                            playerId = feedback.viewingPlayerId,
+                            event = PriestRevealEvent(
+                                targetPlayerId = feedback.targetPlayerId,
+                                revealedCardNumber = feedback.revealedCardNumber
+                            )
+                        )
+
+
+                        broadcastCardPlayed(request, result)
+                    }
+
+                    else -> {
+                        broadcastCardPlayed(request, result)
+                    }
+                }
                 broadcastSnapshot()
+
                 if (result.isRoundEnded) {
                     handleRoundEnd(result)
                 }
@@ -115,22 +144,6 @@ class GameService(
         val player = getPlayer(request.playerId)
 
         return player.hand
-    }
-
-    fun getPlayerHand(
-        request: PriestRequest
-    ): List<Card> {
-
-        if (!gameState.playerExists(request.targetId)) {
-            throw GameException(Strings.get("error.player_not_found"))
-        }
-
-        val targetHand = gameState.getPlayerHandForPriest(
-            request.playerId,
-            request.targetId
-        ) ?: throw GameException(Strings.get("error.not_your_turn"))
-
-        return targetHand
     }
 
     fun updateGameConfig(config: GameConfig) {

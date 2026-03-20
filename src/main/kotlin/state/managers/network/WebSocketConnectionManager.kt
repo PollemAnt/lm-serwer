@@ -9,22 +9,23 @@ import kotlinx.serialization.json.Json
 
 interface ConnectionManager {
     suspend fun broadcastEvent(event: ServerEvent)
+    suspend fun sendToPlayer(playerId: Int, event: ServerEvent)
 }
 
 class WebSocketConnectionManager : ConnectionManager {
 
-    private val connections = mutableSetOf<WebSocketSession>()
+    private val connections = mutableMapOf<Int, WebSocketSession>()
     private val mutex = Mutex()
 
-    suspend fun addConnection(session: WebSocketSession) {
+    suspend fun addConnection(playerId : Int, session: WebSocketSession) {
         mutex.withLock {
-            connections.add(session)
+            connections[playerId] = (session)
         }
     }
 
-    suspend fun removeConnection(session: WebSocketSession) {
+    suspend fun removeConnection(playerId : Int) {
         mutex.withLock {
-            connections.remove(session)
+            connections.remove(playerId)
         }
     }
 
@@ -32,15 +33,26 @@ class WebSocketConnectionManager : ConnectionManager {
         val json = Json.encodeToString(event)
 
         val snapshot = mutex.withLock {
-            connections.toList()
+            connections.values.toList()
         }
 
         snapshot.forEach { session ->
             try {
                 session.send(Frame.Text(json))
             } catch (e: Exception) {
-                println("WS send error, removing session: $e")
-                removeConnection(session)
+                println("WS send error,  $e")
+            }
+        }
+    }
+
+    override suspend fun sendToPlayer(playerId: Int, event: ServerEvent) {
+        val session = mutex.withLock { connections[playerId] }
+
+        if (session != null) {
+            try {
+                session.send(Frame.Text(Json.encodeToString(event)))
+            } catch (e: Exception) {
+                println("WS private send error: $e")
             }
         }
     }

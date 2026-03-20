@@ -5,7 +5,6 @@ import com.example.models.GameConfig
 import com.example.models.MoveRequest
 import com.example.models.PlayerJoinRequest
 import com.example.state.GameState
-import com.example.models.PriestRequest
 import com.example.state.managers.network.GameException
 import com.example.state.managers.network.GameService
 import io.ktor.http.ContentType
@@ -18,7 +17,9 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
+import io.ktor.websocket.close
 import kotlinx.serialization.json.Json
 import state.managers.network.WebSocketConnectionManager
 
@@ -35,14 +36,21 @@ fun Application.configureRouting() {
         }
 
         webSocket("/updates") {
-            connectionManager.addConnection(this)
+            val playerId = call.request.queryParameters["playerId"]?.toIntOrNull()
+
+            if (playerId == null) {
+                close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, "Missing playerId"))
+                return@webSocket
+            }
+
+            connectionManager.addConnection(playerId, this)
 
             try {
                 for (frame in incoming) {
                     if (frame is Frame.Close) break
                 }
             } finally {
-                connectionManager.removeConnection(this)
+                connectionManager.removeConnection(playerId)
             }
         }
 
@@ -109,19 +117,19 @@ fun Application.configureRouting() {
             }
         }
 
-        post("/getPlayerHandForPriest") {
+        /*post("/getPlayerHandForPriest") {
             val request = call.receive<PriestRequest>()
 
-            try {
+            //try {
                 val hand = gameService.getPlayerHand(request)
                 call.respond(HttpStatusCode.OK, hand)
-            } catch (e: GameException) {
+            /*} catch (e: GameException) {
                 call.respond(
                     HttpStatusCode.Forbidden,
                     mapOf("error" to e.message)
                 )
-            }
-        }
+            }*/
+        }*/
 
         get("/player/{playerId}") {
             val playerId = call.parameters["playerId"]?.toIntOrNull()
