@@ -61,7 +61,6 @@ class WebSocketConnectionManager : ConnectionManager {
         } else if (successCount > 0) {
             Logger.debug("✅ Broadcast: $successCount wiadomości wysłanych")
         }
-
     }
 
     override suspend fun sendToPlayer(playerId: Int, event: ServerEvent) {
