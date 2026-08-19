@@ -4,6 +4,7 @@ import com.example.Strings
 import com.example.models.MoveRequest
 import com.example.models.Card
 import com.example.models.CardPlayedFeedback
+import com.example.models.CardType
 import com.example.models.CardType.*
 import com.example.models.Player
 import com.example.state.managers.DeckManager
@@ -16,12 +17,29 @@ class CardEffectResolver(
 ) {
 
     fun resolve(request: MoveRequest): CardPlayedFeedback {
-        val currentPlayer = playerManager.getAll().find { it.id == request.playerId }
+        val currentPlayer = playerManager.findById(request.playerId)
             ?: return CardPlayedFeedback.Standard(Strings.get("error.player_not_found"))
 
-        val targetPlayer =
-            playerManager.getAll().firstOrNull { it.id == request.targetPlayerId } ?: currentPlayer
+        val targetPlayer = request.targetPlayerId?.let { playerManager.findById(it) } ?: currentPlayer
+
+        // Reset protection at the start of player's turn (actually it should be reset when their turn starts,
+        // but here it's reset when they play a card, which is usually correct for Love Letter unless we want to be very strict).
+        // Actually, the rules say protection lasts until your next turn.
         updatePlayerState(currentPlayer.id) { it.copy(isProtected = false) }
+
+        if (targetPlayer.isProtected && targetPlayer.id != currentPlayer.id && isTargetedEffect(request.card.number)) {
+             return CardPlayedFeedback.Standard(Strings.format("game.player_protected", targetPlayer.name))
+        }
+
+        if (targetPlayer.id == currentPlayer.id && isMustTargetOther(request.card.cardType)) {
+            val hasOtherValidTargets = playerManager.getAll()
+                .any { it.id != currentPlayer.id && it.isAlive && !it.isProtected }
+
+            if (hasOtherValidTargets) {
+                return CardPlayedFeedback.Standard(Strings.get("error.cannot_target_self"))
+            }
+        }
+
         return when (request.card.cardType) {
             SPY -> resolveSpy(currentPlayer)
             GUARD -> resolveGuard(request, currentPlayer, targetPlayer)
@@ -36,6 +54,14 @@ class CardEffectResolver(
                 CardPlayedFeedback.Standard(Strings.get("error.unknown_card_played"))
             }
         }
+    }
+
+    private fun isTargetedEffect(cardNumber: Int): Boolean {
+        return cardNumber in listOf(1, 2, 3, 5, 7)
+    }
+
+    private fun isMustTargetOther(cardType: CardType): Boolean {
+        return cardType in listOf(GUARD, PRIEST, BARON, KING)
     }
 
     private fun updatePlayerState(playerId: Int, transform: (Player) -> Player) {
@@ -100,9 +126,8 @@ class CardEffectResolver(
                 wasCorrect
             )
         } else {
-            CardPlayedFeedback.Standard(Strings.get("game.guard_played"))
+            return CardPlayedFeedback.Standard(Strings.get("game.guard_played"))
         }
-        return CardPlayedFeedback.Standard(Strings.get("error.guard_play_error"))
     }
 
     private fun resolvePriest(currentPlayer: Player, targetPlayer: Player): CardPlayedFeedback {
@@ -171,11 +196,13 @@ class CardEffectResolver(
             addCardToPlayed(targetPlayer.id, discardedCard)
             checkDiscardedCardEffect(discardedCard, targetPlayer)
 
-            val newCard = deckManager.draw()
-            if (newCard != null) {
-                addCardToHand(targetPlayer.id, newCard)
-            } else {
-                deckManager.getSecretCard()?.let { addCardToHand(targetPlayer.id, it) }
+            if (targetPlayer.isAlive) {
+                val newCard = deckManager.draw()
+                if (newCard != null) {
+                    addCardToHand(targetPlayer.id, newCard)
+                } else {
+                    deckManager.getSecretCard()?.let { addCardToHand(targetPlayer.id, it) }
+                }
             }
         }
         return CardPlayedFeedback.PrincePlayed(currentPlayer.id, targetPlayer.id)

@@ -14,9 +14,5 @@ data class Player(
     var isAlive: Boolean = true
 )
 
-val players = mutableListOf<Player>()
-
 @Serializable
 data class PlayerJoinRequest(val name: String)
-
-val playersJoin = mutableListOf<PlayerJoinRequest>()

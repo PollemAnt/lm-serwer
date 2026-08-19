@@ -16,6 +16,7 @@ data class Card(
     }
 }
 
+@Serializable
 enum class CardType {
     SPY,
     GUARD,

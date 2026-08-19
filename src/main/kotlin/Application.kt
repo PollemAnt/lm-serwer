@@ -7,12 +7,12 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
-import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.EngineMain
-import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.plugins.calllogging.CallLogging
+import org.slf4j.event.Level as SLF4JLevel
 import io.ktor.server.response.respond
 import io.ktor.server.websocket.WebSockets
 import kotlinx.serialization.Serializable
@@ -24,48 +24,28 @@ data class ErrorResponse(
     val message: String
 )
 
-fun main(args: Array<String>) {
-    EngineMain.main(args)
-    embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
-}
+fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 fun Application.module() {
+    install(CallLogging) {
+        level = SLF4JLevel.INFO
+    }
+
     install(CORS) {
         anyHost()
+        allowHeader("Content-Type")
         allowNonSimpleContentTypes = true
     }
 
     install(ContentNegotiation) {
-        json(Json {
-            classDiscriminator = "type"
-            prettyPrint = true
-            isLenient = true
-
-            serializersModule = SerializersModule {
-                polymorphic(CardPlayedFeedback::class) {
-                    subclass(CardPlayedFeedback.Standard::class)
-                    subclass(CardPlayedFeedback.GuardPlayed::class)
-                    subclass(CardPlayedFeedback.BaronPlayed::class)
-                    subclass(CardPlayedFeedback.HandmaidPlayed::class)
-                    subclass(CardPlayedFeedback.KingPlayed::class)
-                    subclass(CardPlayedFeedback.PrincePlayed::class)
-                    subclass(CardPlayedFeedback.PriestPlayed::class)
-                    subclass(CardPlayedFeedback.SpyPlayed::class)
-                    subclass(CardPlayedFeedback.ChancellorPlayed::class)
-                }
-                polymorphic(MoveResult::class) {
-                    subclass(MoveResult.Success::class)
-                    subclass(MoveResult.Error::class)
-                }
-            }
-        })
+        json(JsonConfig.json)
     }
 
     install(StatusPages) {
 
         exception<GameException> { call, cause ->
             call.respond(
-                HttpStatusCode.Forbidden,
+                HttpStatusCode.BadRequest,
                 ErrorResponse(cause.message ?: "Błąd gry")
             )
         }

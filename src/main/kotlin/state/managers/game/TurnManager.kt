@@ -20,7 +20,12 @@ class TurnManager(
         val playersCount = playerManager.count
         if (playersCount == 0) return
 
-        activeIndex = (activeIndex + 1) % playersCount
+        // Advance to next alive player
+        var attempts = 0
+        do {
+            activeIndex = (activeIndex + 1) % playersCount
+            attempts++
+        } while (currentPlayer?.isAlive == false && attempts < playersCount)
 
         val card = deckManager.draw()
         if (card != null) {
@@ -42,7 +47,16 @@ class TurnManager(
     fun getActivePlayerId(): Int? = currentPlayer?.id
 
     fun getNextPlayerId(): Int? {
-        val nextIndex = (activeIndex + 1) % playerManager.count
+        val playersCount = playerManager.count
+        if (playersCount == 0) return null
+        
+        var nextIndex = activeIndex
+        var attempts = 0
+        do {
+            nextIndex = (nextIndex + 1) % playersCount
+            attempts++
+        } while (playerManager.getByIndex(nextIndex)?.isAlive == false && attempts < playersCount)
+        
         return playerManager.getByIndex(nextIndex)?.id
     }
 }

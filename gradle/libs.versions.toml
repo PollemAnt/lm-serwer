@@ -1,7 +1,9 @@
 [versions]
-kotlin = "2.1.10"
+kotlin = "2.4.10"
 ktor = "3.2.3"
 logback = "1.4.14"
+java-version = "25"
+
 
 [libraries]
 ktor-server-core-jvm = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
@@ -18,6 +20,7 @@ ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref 
 ktor-server-test = { module = "io.ktor:ktor-server-tests", version.ref = "ktor" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktor" }
+ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
 logback={ module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 [plugins]

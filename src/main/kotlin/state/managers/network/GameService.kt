@@ -1,6 +1,7 @@
 package com.example.state.managers.network
 
 import com.example.Strings
+import com.example.logger.Logger
 import com.example.models.Card
 import com.example.models.CardPlayedEvent
 import com.example.models.CardPlayedFeedback
@@ -15,9 +16,10 @@ import com.example.models.Player
 import com.example.models.PlayerJoinEvent
 import com.example.models.PriestRevealEvent
 import com.example.models.RoundEndedEvent
+import com.example.models.TurnChangedEvent
 import com.example.state.GameState
 import kotlinx.coroutines.delay
-import state.managers.network.ConnectionManager
+import com.example.state.managers.network.ConnectionManager
 
 
 class GameException(message: String) : RuntimeException(message)
@@ -36,6 +38,7 @@ class GameService(
 
         if (playerAdded != null) {
             broadcastPlayerJoin(playerAdded)
+
             broadcastSnapshot()
 
         } else {
@@ -78,8 +81,10 @@ class GameService(
                     }
                 }
                 broadcastSnapshot()
+                broadcastTurnChanged(result.nextPlayerId)
 
                 if (result.isRoundEnded) {
+                    broadcastSnapshot() // Wyślij nowe karty po zakończeniu rundy
                     handleRoundEnd(result)
                 }
             }
@@ -122,6 +127,7 @@ class GameService(
 
                 broadcastCardPlayed(request, result, chancellorCard)
                 broadcastSnapshot()
+                broadcastTurnChanged(result.nextPlayerId)
             }
 
             is MoveResult.Error -> {
@@ -163,14 +169,14 @@ class GameService(
         result: MoveResult.Success,
         card: Card? = null,
     ) {
-        connectionManager.broadcastEvent(
-            CardPlayedEvent(
-                playerId = request.playerId,
-                card = card ?: request.card,
-                targetPlayerId = request.targetPlayerId ?: -1,
-                feedback = result.feedback
-            )
+        val event = CardPlayedEvent(
+            playerId = request.playerId,
+            card = card ?: request.card,
+            targetPlayerId = request.targetPlayerId ?: -1,
+            feedback = result.feedback
         )
+        Logger.info("📢 Rozsyłanie CardPlayedEvent: Gracz ${request.playerId} zagrał ${event.card.name}")
+        connectionManager.broadcastEvent(event)
     }
 
     private suspend fun broadcastPlayerJoin(
@@ -180,6 +186,12 @@ class GameService(
             PlayerJoinEvent(
                 player = playerAdded
             )
+        )
+    }
+
+    private suspend fun broadcastTurnChanged(nextPlayerId: Int) {
+        connectionManager.broadcastEvent(
+            TurnChangedEvent(nextPlayerId)
         )
     }
 }

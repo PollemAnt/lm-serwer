@@ -8,118 +8,53 @@ object DeckFactory {
         val deck = mutableListOf<Card>()
         var idCounter = 1
 
-        repeat(composition[0].count) {
-            deck.add(
-                Card(
-                    id = idCounter++,
-                    number = 0,
-                    cardType = CardType.SPY,
-                    name = Strings.get("card.spy"),
-                    description = Strings.get("card.action.spy")
+        composition.forEach { card ->
+            repeat(card.count) {
+                deck.add(
+                    Card(
+                        id = idCounter++,
+                        number = card.cardNumber,
+                        cardType = getCardType(card.cardNumber),
+                        name = card.cardName,
+                        description = getCardDescription(card.cardNumber)
+                    )
                 )
-            )
-        }
-        repeat(composition[1].count) {
-            deck.add(
-                Card(
-                    id = idCounter++,
-                    number = 1,
-                    cardType = CardType.GUARD,
-                    name = Strings.get("card.guard"),
-                    description = Strings.get("card.action.guard")
-                )
-            )
-        }
-        repeat(composition[2].count) {
-            deck.add(
-                Card(
-                    id = idCounter++,
-                    number = 2,
-                    cardType = CardType.PRIEST,
-                    name = Strings.get("card.priest"),
-                    description = Strings.get("card.action.priest")
-                )
-            )
-        }
-        repeat(composition[3].count) {
-            deck.add(
-                Card(
-                    id = idCounter++,
-                    number = 3,
-                    cardType = CardType.BARON,
-                    name = Strings.get("card.baron"),
-                    description = Strings.get("card.action.baron")
-                )
-            )
-        }
-        repeat(composition[4].count) {
-            deck.add(
-                Card(
-                    id = idCounter++,
-                    number = 4,
-                    cardType = CardType.HANDMAID,
-                    name = Strings.get("card.handmaid"),
-                    description = Strings.get("card.action.handmaid")
-                )
-            )
-        }
-        repeat(composition[5].count) {
-            deck.add(
-                Card(
-                    id = idCounter++,
-                    number = 5,
-                    cardType = CardType.PRICE,
-                    name = Strings.get("card.prince"),
-                    description = Strings.get("card.action.prince")
-                )
-            )
-        }
-        repeat(composition[6].count) {
-            deck.add(
-                Card(
-                    id = idCounter++,
-                    number = 6,
-                    cardType = CardType.CHANCELLOR,
-                    name = Strings.get("card.chancellor"),
-                    description = Strings.get("card.action.chancellor")
-                )
-            )
-        }
-        repeat(composition[7].count) {
-            deck.add(
-                Card(
-                    id = idCounter++,
-                    number = 7,
-                    cardType = CardType.KING,
-                    name = Strings.get("card.king"),
-                    description = Strings.get("card.action.king")
-                )
-            )
-        }
-        repeat(composition[8].count) {
-            deck.add(
-                Card(
-                    id = idCounter++,
-                    number = 8,
-                    cardType = CardType.COUNTESS,
-                    name = Strings.get("card.countess"),
-                    description = Strings.get("card.action.countess_rule")
-                )
-            )
-        }
-        repeat(composition[9].count) {
-            deck.add(
-                Card(
-                    id = idCounter++,
-                    number = 9,
-                    cardType = CardType.PRINCESS,
-                    name = Strings.get("card.princess"),
-                    description = Strings.get("card.action.princess_rule")
-                )
-            )
+            }
         }
 
         return deck
+    }
+
+    fun getCardType(number: Int): CardType {
+        return when (number) {
+            0 -> CardType.SPY
+            1 -> CardType.GUARD
+            2 -> CardType.PRIEST
+            3 -> CardType.BARON
+            4 -> CardType.HANDMAID
+            5 -> CardType.PRICE
+            6 -> CardType.CHANCELLOR
+            7 -> CardType.KING
+            8 -> CardType.COUNTESS
+            9 -> CardType.PRINCESS
+            else -> CardType.SPY
+        }
+    }
+
+    private fun getCardDescription(number: Int): String {
+        return when (number) {
+            0 -> Strings.get("card.action.spy")
+            1 -> Strings.get("card.action.guard")
+            2 -> Strings.get("card.action.priest")
+            3 -> Strings.get("card.action.baron")
+            4 -> Strings.get("card.action.handmaid")
+            5 -> Strings.get("card.action.prince")
+            6 -> Strings.get("card.action.chancellor")
+            7 -> Strings.get("card.action.king")
+            8 -> Strings.get("card.action.countess_rule")
+            9 -> Strings.get("card.action.princess_rule")
+            else -> ""
+        }
     }
 
     fun createDefaultDeckComposition(): List<CardCount> {

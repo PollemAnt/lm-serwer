@@ -1,5 +1,7 @@
 import com.example.Strings
+import com.example.models.Card
 import com.example.models.CardPlayedEvent
+import com.example.models.GameSnapshotEvent
 import com.example.models.MoveRequest
 import com.example.models.PlayerJoinEvent
 import com.example.state.GameState
@@ -31,8 +33,9 @@ class GameServiceTest {
         val player = gameService.addPlayer("Alice")
 
         assertEquals("Alice", player.name)
-        assertEquals(1, connectionManager.events.size)
-        assertTrue(connectionManager.events.first() is PlayerJoinEvent)
+        assertEquals(2, connectionManager.events.size)
+        assertTrue(connectionManager.events.any { it is PlayerJoinEvent })
+        assertTrue(connectionManager.events.any { it is GameSnapshotEvent })
     }
 
     @Test
@@ -105,5 +108,58 @@ class GameServiceTest {
         )
 
         assertTrue(connectionManager.events.none { it is CardPlayedEvent })
+    }
+
+    @Test
+    fun `should prevent Guard from targeting self when other targets exist`() = runTest {
+        val p1 = gameService.addPlayer("Alice")
+        val p2 = gameService.addPlayer("Bob")
+        gameState.startGameForTest()
+
+        val actualP1 = gameState.getPlayerById(p1.id)!!
+        
+        // Ensure Alice has a Guard
+        val guardCard = Card(99, 1, com.example.models.CardType.GUARD, "Guard", "")
+        gameState.setPlayerHand(p1.id, listOf(guardCard))
+
+        val move = MoveRequest(
+            playerId = actualP1.id,
+            card = guardCard,
+            targetPlayerId = actualP1.id, // Targeting self
+            guessCardNumber = 2
+        )
+
+        val exception = assertThrows<com.example.state.managers.network.GameException> {
+            gameService.handleMove(move)
+        }
+        assertEquals(com.example.Strings.get("error.cannot_target_self"), exception.message)
+    }
+
+    @Test
+    fun `should allow Guard to target self when all others are protected`() = runTest {
+        val p1 = gameService.addPlayer("Alice")
+        val p2 = gameService.addPlayer("Bob")
+        gameState.startGameForTest()
+
+        // Bob is protected
+        gameState.setPlayerProtected(p2.id, true)
+        
+        // Ensure Alice has a Guard
+        val guardCard = Card(99, 1, com.example.models.CardType.GUARD, "Guard", "")
+        gameState.setPlayerHand(p1.id, listOf(guardCard))
+
+        val move = MoveRequest(
+            playerId = p1.id,
+            card = guardCard,
+            targetPlayerId = p1.id, // Targeting self forced
+            guessCardNumber = 2
+        )
+
+        gameService.handleMove(move)
+        advanceUntilIdle()
+
+        val lastEvent = connectionManager.events.filterIsInstance<com.example.models.CardPlayedEvent>().last()
+        // Should NOT be an error message, but the actual Guard effect (even if it does nothing to self)
+        assertTrue(lastEvent.feedback is com.example.models.CardPlayedFeedback.GuardPlayed)
     }
 }

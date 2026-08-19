@@ -1,5 +1,6 @@
 package com.example.state.managers
 
+import com.example.logger.Logger
 import com.example.models.Card
 import com.example.models.CardCount
 import com.example.models.DeckFactory
@@ -15,11 +16,13 @@ class DeckManager {
     }
 
     fun resetAndShuffle() {
+        Logger.debug(" resetAndShuffle ")
         deck = DeckFactory.createDeck(deckComposition).shuffled().toMutableList()
         secretCard = null
     }
 
     fun drawSecretCard() {
+        Logger.debug(" drawSecretCard ")
         secretCard = deck.removeFirstOrNull()
     }
 

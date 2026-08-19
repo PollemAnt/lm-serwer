@@ -1,5 +1,6 @@
-package state.managers.network
+package com.example.state.managers.network
 
+import com.example.JsonConfig
 import com.example.logger.Logger
 import com.example.models.ServerEvent
 import io.ktor.websocket.Frame
@@ -15,6 +16,7 @@ interface ConnectionManager {
 
 class WebSocketConnectionManager : ConnectionManager {
 
+    private val json = JsonConfig.json
     private val connections = mutableMapOf<Int, WebSocketSession>()
     private val mutex = Mutex()
 
@@ -25,29 +27,37 @@ class WebSocketConnectionManager : ConnectionManager {
         Logger.info("🔌 WebSocket połączony - PlayerId: $playerId, Aktywne połączenia: ${connections.size}")
     }
 
-    suspend fun removeConnection(playerId : Int) {
+    suspend fun removeConnection(playerId : Int, session: WebSocketSession) {
         mutex.withLock {
-            connections.remove(playerId)
+            if (connections[playerId] === session) {
+                connections.remove(playerId)
+                Logger.info("🔌 WebSocket rozłączony - PlayerId: $playerId, Aktywne połączenia: ${connections.size}")
+            } else {
+                Logger.debug("🔌 Pominięto usuwanie WebSocket dla PlayerId: $playerId - sesja została już zastąpiona")
+            }
         }
-        Logger.info("🔌 WebSocket rozłączony - PlayerId: $playerId, Aktywne połączenia: ${connections.size}")
     }
 
     override suspend fun broadcastEvent(event: ServerEvent) {
-        val json = Json.encodeToString(event)
+        val jsonString = try {
+            json.encodeToString(event)
+        } catch (e: Exception) {
+            Logger.error("❌ Błąd serializacji eventu ${event::class.simpleName}: ${e.message}", e)
+            return
+        }
 
         val snapshot = mutex.withLock {
             connections.values.toList()
         }
 
-        Logger.debug("📡 Broadcast event: ${event::class.simpleName} do ${snapshot.size} graczy")
-        Logger.debug("📦 Dane eventu: ${json.take(200)}${if (json.length > 200) "..." else ""}")
+        Logger.debug("📡 Broadcast event: ${event::class.simpleName} do ${snapshot.size} graczy. JSON: $jsonString")
 
         var successCount = 0
         var errorCount = 0
 
         snapshot.forEach { session ->
             try {
-                session.send(Frame.Text(json))
+                session.send(Frame.Text(jsonString))
                 successCount++
             } catch (e: Exception) {
                 println("WS send error,  $e")
@@ -68,10 +78,10 @@ class WebSocketConnectionManager : ConnectionManager {
 
         if (session != null) {
             try {
-                val json = Json.encodeToString(event)
-                session.send(Frame.Text(Json.encodeToString(event)))
+                val jsonString = json.encodeToString(event)
+                session.send(Frame.Text(jsonString))
                 Logger.debug("📨 Prywatna wiadomość do gracza $playerId: ${event::class.simpleName}")
-                Logger.debug("📦 Dane: ${json.take(200)}${if (json.length > 200) "..." else ""}")
+                Logger.debug("📦 Dane: ${jsonString.take(200)}${if (jsonString.length > 200) "..." else ""}")
 
             } catch (e: Exception) {
                 println("WS private send error: $e")

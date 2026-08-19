@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class PlayerManager {
 
     private val playersById = ConcurrentHashMap<Int, Player>()
-    private val idGenerator = AtomicInteger(0)
+    private val idGenerator = AtomicInteger(1)
 
     private val playerOrder = mutableListOf<Int>()
 
@@ -81,6 +81,12 @@ class PlayerManager {
     fun addPlayedCard(playerId: Int, card: Card) {
         updatePlayer(playerId) { p ->
             p.copy(playedCards = p.playedCards + card)
+        }
+    }
+
+    fun removePlayedCard(playerId: Int, card: Card) {
+        updatePlayer(playerId) { p ->
+            p.copy(playedCards = p.playedCards.filterNot { it.id == card.id })
         }
     }
 
