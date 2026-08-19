@@ -1,6 +1,9 @@
-package com.example.models
+package com.example.deck
 
 import com.example.Strings
+import org.example.shared.domain.Card
+import org.example.shared.domain.CardCount
+import org.example.shared.domain.CardType
 
 object DeckFactory {
 
@@ -32,7 +35,7 @@ object DeckFactory {
             2 -> CardType.PRIEST
             3 -> CardType.BARON
             4 -> CardType.HANDMAID
-            5 -> CardType.PRICE
+            5 -> CardType.PRINCE
             6 -> CardType.CHANCELLOR
             7 -> CardType.KING
             8 -> CardType.COUNTESS

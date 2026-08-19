@@ -1,4 +1,4 @@
-import com.example.models.ServerEvent
+import org.example.shared.protocol.ServerEvent
 import com.example.state.managers.network.ConnectionManager
 
 class FakeConnectionManager: ConnectionManager {

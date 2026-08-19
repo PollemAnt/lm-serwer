@@ -1,7 +1,7 @@
 package com.example.state.managers
 
-import com.example.models.Card
-import com.example.models.Player
+import org.example.shared.domain.Card
+import org.example.shared.domain.Player
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 

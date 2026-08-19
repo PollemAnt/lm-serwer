@@ -1,6 +1,6 @@
 package com.example.state.managers
 
-import com.example.models.Player
+import org.example.shared.domain.Player
 
 class TurnManager(
     private val playerManager: PlayerManager,

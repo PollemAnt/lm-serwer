@@ -1,8 +1,8 @@
 package com.example.state.managers
 
 import com.example.logger.Logger
-import com.example.models.Player
-import com.example.models.RoundSummary
+import org.example.shared.domain.Player
+import org.example.shared.domain.RoundSummary
 
 class RoundManager(
     private val playerManager: PlayerManager,

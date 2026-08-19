@@ -1,7 +1,7 @@
 package com.example.state
 
 import com.example.Strings
-import com.example.models.MoveResult
+import org.example.shared.protocol.MoveResult
 import com.example.state.managers.PlayerManager
 import com.example.state.managers.TurnManager
 

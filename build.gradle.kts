@@ -1,11 +1,11 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
-    kotlin("plugin.serialization") version "2.4.10"
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
-    jvmToolchain(libs.versions.java.version.get().toInt())
+    jvmToolchain(21)
 }
 
 group = "com.example"
@@ -20,6 +20,7 @@ tasks.test {
 }
 
 dependencies {
+    implementation(project(":shared"))
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.config.yaml)

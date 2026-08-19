@@ -2,24 +2,24 @@ package com.example.state.managers.network
 
 import com.example.Strings
 import com.example.logger.Logger
-import com.example.models.Card
-import com.example.models.CardPlayedEvent
-import com.example.models.CardPlayedFeedback
-import com.example.models.CardType
-import com.example.models.DrawRequest
-import com.example.models.GameConfig
-import com.example.models.GameSnapshot
-import com.example.models.GameSnapshotEvent
-import com.example.models.MoveRequest
-import com.example.models.MoveResult
-import com.example.models.Player
-import com.example.models.PlayerJoinEvent
-import com.example.models.PriestRevealEvent
-import com.example.models.RoundEndedEvent
-import com.example.models.TurnChangedEvent
 import com.example.state.GameState
 import kotlinx.coroutines.delay
-import com.example.state.managers.network.ConnectionManager
+import org.example.shared.domain.Card
+import org.example.shared.domain.CardType
+import org.example.shared.domain.GameConfig
+import org.example.shared.domain.GameSnapshot
+import org.example.shared.domain.Player
+import org.example.shared.protocol.CardPlayedEvent
+import org.example.shared.protocol.CardPlayedFeedback
+import org.example.shared.protocol.DrawRequest
+import org.example.shared.protocol.GameSnapshotEvent
+import org.example.shared.protocol.MoveRequest
+import org.example.shared.protocol.MoveResult
+import org.example.shared.protocol.PlayerJoinEvent
+import org.example.shared.protocol.PriestRevealEvent
+import org.example.shared.protocol.RoundEndedEvent
+import org.example.shared.protocol.TurnChangedEvent
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class GameException(message: String) : RuntimeException(message)
@@ -102,7 +102,7 @@ class GameService(
     }
 
     private suspend fun handleRoundEnd(result: MoveResult.Success) {
-        delay(1000)
+        delay(1000.milliseconds)
 
         val roundSummary = result.roundSummary
             ?: run {

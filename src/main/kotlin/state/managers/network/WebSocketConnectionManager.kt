@@ -2,12 +2,11 @@ package com.example.state.managers.network
 
 import com.example.JsonConfig
 import com.example.logger.Logger
-import com.example.models.ServerEvent
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.json.Json
+import org.example.shared.protocol.ServerEvent
 
 interface ConnectionManager {
     suspend fun broadcastEvent(event: ServerEvent)

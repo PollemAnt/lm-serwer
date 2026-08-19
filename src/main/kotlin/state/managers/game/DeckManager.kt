@@ -1,9 +1,9 @@
 package com.example.state.managers
 
 import com.example.logger.Logger
-import com.example.models.Card
-import com.example.models.CardCount
-import com.example.models.DeckFactory
+import org.example.shared.domain.Card
+import org.example.shared.domain.CardCount
+import com.example.deck.DeckFactory
 
 class DeckManager {
 

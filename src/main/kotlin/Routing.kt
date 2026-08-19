@@ -1,11 +1,6 @@
 package com.example
 
 import com.example.logger.Logger
-import com.example.models.DrawRequest
-import com.example.models.GameConfig
-import com.example.models.MoveRequest
-import com.example.models.PlayerJoinRequest
-import com.example.models.PriestRequest
 import com.example.state.GameState
 import com.example.state.managers.network.GameService
 import com.example.state.managers.network.WebSocketConnectionManager
@@ -25,6 +20,10 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import kotlinx.serialization.json.Json
+import org.example.shared.domain.GameConfig
+import org.example.shared.protocol.DrawRequest
+import org.example.shared.protocol.MoveRequest
+import org.example.shared.protocol.PlayerJoinRequest
 
 
 fun Application.configureRouting() {

@@ -2,13 +2,13 @@ package com.example.state
 
 import com.example.Strings
 import com.example.logger.Logger
-import com.example.models.Card
-import com.example.models.CardPlayedFeedback
-import com.example.models.GameConfig
-import com.example.models.GameSnapshot
-import com.example.models.MoveRequest
-import com.example.models.MoveResult
-import com.example.models.Player
+import org.example.shared.domain.Card
+import org.example.shared.protocol.CardPlayedFeedback
+import org.example.shared.domain.GameConfig
+import org.example.shared.domain.GameSnapshot
+import org.example.shared.protocol.MoveRequest
+import org.example.shared.protocol.MoveResult
+import org.example.shared.domain.Player
 import com.example.state.effects.CardEffectResolver
 import com.example.state.handler.ChancellorHandler
 import com.example.state.managers.DeckManager

@@ -1,12 +1,12 @@
 package com.example.state.effects
 
 import com.example.Strings
-import com.example.models.MoveRequest
-import com.example.models.Card
-import com.example.models.CardPlayedFeedback
-import com.example.models.CardType
-import com.example.models.CardType.*
-import com.example.models.Player
+import org.example.shared.protocol.MoveRequest
+import org.example.shared.domain.Card
+import org.example.shared.protocol.CardPlayedFeedback
+import org.example.shared.domain.CardType
+import org.example.shared.domain.CardType.*
+import org.example.shared.domain.Player
 import com.example.state.managers.DeckManager
 import com.example.state.managers.PlayerManager
 
@@ -46,7 +46,7 @@ class CardEffectResolver(
             PRIEST -> resolvePriest(currentPlayer, targetPlayer)
             BARON -> resolveBaron(currentPlayer, targetPlayer)
             HANDMAID -> resolveHandmaid(currentPlayer)
-            PRICE -> resolvePrince(currentPlayer, targetPlayer)
+            PRINCE -> resolvePrince(currentPlayer, targetPlayer)
             CHANCELLOR -> resolveChancellor(currentPlayer)
             KING -> resolveKing(currentPlayer, targetPlayer)
             COUNTESS -> resolveCountess()

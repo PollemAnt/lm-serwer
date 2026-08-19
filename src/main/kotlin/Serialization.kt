@@ -1,14 +1,14 @@
 package com.example
 
-import com.example.models.CardPlayedEvent
-import com.example.models.CardPlayedFeedback
-import com.example.models.GameSnapshotEvent
-import com.example.models.MoveResult
-import com.example.models.PlayerJoinEvent
-import com.example.models.PriestRevealEvent
-import com.example.models.RoundEndedEvent
-import com.example.models.ServerEvent
-import com.example.models.TurnChangedEvent
+import org.example.shared.protocol.CardPlayedEvent
+import org.example.shared.protocol.CardPlayedFeedback
+import org.example.shared.protocol.GameSnapshotEvent
+import org.example.shared.protocol.MoveResult
+import org.example.shared.protocol.PlayerJoinEvent
+import org.example.shared.protocol.PriestRevealEvent
+import org.example.shared.protocol.RoundEndedEvent
+import org.example.shared.protocol.ServerEvent
+import org.example.shared.protocol.TurnChangedEvent
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic

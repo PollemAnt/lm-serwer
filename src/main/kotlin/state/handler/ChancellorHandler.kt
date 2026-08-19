@@ -1,9 +1,9 @@
 package com.example.state.handler
 
 import com.example.Strings
-import com.example.models.Card
-import com.example.models.CardPlayedFeedback
-import com.example.models.MoveResult
+import org.example.shared.domain.Card
+import org.example.shared.protocol.CardPlayedFeedback
+import org.example.shared.protocol.MoveResult
 import com.example.state.ChancellorState
 import com.example.state.managers.DeckManager
 import com.example.state.managers.PlayerManager
