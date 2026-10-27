@@ -145,7 +145,7 @@ fun Application.configureRouting() {
         //Temporary
         get("/reset") {
             Logger.warn("🔄 RESET GRY - Wykonano reset stanu gry")
-            gameState.resetGame()
+            gameService.resetGame()
             call.respond(HttpStatusCode.OK)
         }
     }

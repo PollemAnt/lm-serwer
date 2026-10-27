@@ -4,6 +4,8 @@ import com.example.Strings
 import com.example.logger.Logger
 import com.example.state.GameState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.example.shared.domain.Card
 import org.example.shared.domain.CardType
 import org.example.shared.domain.GameConfig
@@ -21,16 +23,16 @@ import org.example.shared.protocol.RoundEndedEvent
 import org.example.shared.protocol.TurnChangedEvent
 import kotlin.time.Duration.Companion.milliseconds
 
-
 class GameException(message: String) : RuntimeException(message)
 
 class GameService(
     private val gameState: GameState,
     private val connectionManager: ConnectionManager
 ) {
+    
+    private val gameMutex = Mutex()
 
-    suspend fun addPlayer(playerName: String): Player {
-
+    suspend fun addPlayer(playerName: String): Player = gameMutex.withLock {
         require(playerName.isNotBlank()) { "Player name cannot be blank" }
         require(playerName.length <= 20) { "Player name too long" }
 
@@ -38,9 +40,7 @@ class GameService(
 
         if (playerAdded != null) {
             broadcastPlayerJoin(playerAdded)
-
             broadcastSnapshot()
-
         } else {
             throw GameException(Strings.get("lobby.max_players_reached"))
         }
@@ -55,15 +55,11 @@ class GameService(
         connectionManager.sendToPlayer(playerId, event)
     }
 
-    suspend fun handleMove(request: MoveRequest) {
+    suspend fun handleMove(request: MoveRequest) = gameMutex.withLock {
         when (val result = gameState.makeMove(request)) {
-
             is MoveResult.Success -> {
-
                 when (val feedback = result.feedback) {
-
                     is CardPlayedFeedback.PriestPlayed -> {
-
                         sendPrivateEvent(
                             playerId = feedback.viewingPlayerId,
                             event = PriestRevealEvent(
@@ -71,11 +67,8 @@ class GameService(
                                 revealedCardNumber = feedback.revealedCardNumber
                             )
                         )
-
-
                         broadcastCardPlayed(request, result)
                     }
-
                     else -> {
                         broadcastCardPlayed(request, result)
                     }
@@ -88,7 +81,6 @@ class GameService(
                     handleRoundEnd(result)
                 }
             }
-
             is MoveResult.Error -> {
                 throw GameException(result.message)
             }
@@ -112,11 +104,9 @@ class GameService(
         connectionManager.broadcastEvent(RoundEndedEvent(roundSummary))
     }
 
-    suspend fun completeChancellorMove(request: MoveRequest) {
+    suspend fun completeChancellorMove(request: MoveRequest) = gameMutex.withLock {
         when (val result = gameState.completeChancellorMove(request.playerId, request.card)) {
-
             is MoveResult.Success -> {
-
                 val chancellorCard = Card(
                     id = -1,
                     number = 6,
@@ -129,39 +119,40 @@ class GameService(
                 broadcastSnapshot()
                 broadcastTurnChanged(result.nextPlayerId)
             }
-
             is MoveResult.Error -> {
                 throw GameException(result.message)
             }
         }
-
     }
 
-    fun getPlayer(playerId: Int?): Player {
+    suspend fun getPlayer(playerId: Int?): Player = gameMutex.withLock {
         requireNotNull(playerId) { Strings.get("error.invalid_player_id") }
 
         return gameState.getPlayerById(playerId)
             ?: throw GameException(Strings.get("error.player_not_found"))
     }
 
-    fun drawCardsForChancellor(request: DrawRequest): List<Card> {
+    suspend fun drawCardsForChancellor(request: DrawRequest): List<Card> = gameMutex.withLock {
         gameState.drawCardForChancellor(request.playerId, request.card)
-
-        val player = getPlayer(request.playerId)
-
+        val player = gameState.getPlayerById(request.playerId)
+            ?: throw GameException(Strings.get("error.player_not_found"))
         return player.hand
     }
 
-    fun updateGameConfig(config: GameConfig) {
+    suspend fun updateGameConfig(config: GameConfig) = gameMutex.withLock {
         gameState.updateGameConfig(config)
     }
 
-    fun getGameConfig(): GameConfig {
+    suspend fun getGameConfig(): GameConfig = gameMutex.withLock {
         return gameState.getGameConfig()
     }
 
-    fun getState(): GameSnapshot {
+    suspend fun getState(): GameSnapshot = gameMutex.withLock {
         return gameState.getState()
+    }
+    
+    suspend fun resetGame() = gameMutex.withLock {
+        gameState.resetGame()
     }
 
     private suspend fun broadcastCardPlayed(
@@ -195,4 +186,3 @@ class GameService(
         )
     }
 }
-

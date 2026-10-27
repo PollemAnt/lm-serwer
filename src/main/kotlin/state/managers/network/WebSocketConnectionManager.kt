@@ -4,9 +4,8 @@ import com.example.JsonConfig
 import com.example.logger.Logger
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.example.shared.protocol.ServerEvent
+import java.util.concurrent.ConcurrentHashMap
 
 interface ConnectionManager {
     suspend fun broadcastEvent(event: ServerEvent)
@@ -16,24 +15,19 @@ interface ConnectionManager {
 class WebSocketConnectionManager : ConnectionManager {
 
     private val json = JsonConfig.json
-    private val connections = mutableMapOf<Int, WebSocketSession>()
-    private val mutex = Mutex()
+    private val connections = ConcurrentHashMap<Int, WebSocketSession>()
 
-    suspend fun addConnection(playerId : Int, session: WebSocketSession) {
-        mutex.withLock {
-            connections[playerId] = (session)
-        }
+    fun addConnection(playerId : Int, session: WebSocketSession) {
+        connections[playerId] = session
         Logger.info("🔌 WebSocket połączony - PlayerId: $playerId, Aktywne połączenia: ${connections.size}")
     }
 
-    suspend fun removeConnection(playerId : Int, session: WebSocketSession) {
-        mutex.withLock {
-            if (connections[playerId] === session) {
-                connections.remove(playerId)
-                Logger.info("🔌 WebSocket rozłączony - PlayerId: $playerId, Aktywne połączenia: ${connections.size}")
-            } else {
-                Logger.debug("🔌 Pominięto usuwanie WebSocket dla PlayerId: $playerId - sesja została już zastąpiona")
-            }
+    fun removeConnection(playerId : Int, session: WebSocketSession) {
+        if (connections[playerId] === session) {
+            connections.remove(playerId)
+            Logger.info("🔌 WebSocket rozłączony - PlayerId: $playerId, Aktywne połączenia: ${connections.size}")
+        } else {
+            Logger.debug("🔌 Pominięto usuwanie WebSocket dla PlayerId: $playerId - sesja została już zastąpiona")
         }
     }
 
@@ -45,9 +39,7 @@ class WebSocketConnectionManager : ConnectionManager {
             return
         }
 
-        val snapshot = mutex.withLock {
-            connections.values.toList()
-        }
+        val snapshot = connections.values.toList()
 
         Logger.debug("📡 Broadcast event: ${event::class.simpleName} do ${snapshot.size} graczy. JSON: $jsonString")
 
@@ -73,7 +65,7 @@ class WebSocketConnectionManager : ConnectionManager {
     }
 
     override suspend fun sendToPlayer(playerId: Int, event: ServerEvent) {
-        val session = mutex.withLock { connections[playerId] }
+        val session = connections[playerId]
 
         if (session != null) {
             try {
@@ -90,8 +82,6 @@ class WebSocketConnectionManager : ConnectionManager {
     }
 
     suspend fun getConnectionStats(): Map<Int, Boolean> {
-        return mutex.withLock {
-            connections.mapValues { true }.toMap()
-        }
+        return connections.mapValues { true }.toMap()
     }
 }
