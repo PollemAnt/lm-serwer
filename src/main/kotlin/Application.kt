@@ -15,14 +15,27 @@ import io.ktor.server.websocket.WebSockets
 import kotlinx.serialization.Serializable
 import org.slf4j.event.Level as SLF4JLevel
 
+import io.ktor.server.sessions.Sessions
+import io.ktor.server.sessions.cookie
+
 @Serializable
 data class ErrorResponse(
     val message: String
 )
 
+@Serializable
+data class UserSession(val playerId: Int)
+
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 fun Application.module() {
+    install(Sessions) {
+        cookie<UserSession>("USER_SESSION") {
+            cookie.path = "/"
+            cookie.maxAgeInSeconds = 3600 // 1 godzina
+        }
+    }
+
     install(CallLogging) {
         level = SLF4JLevel.INFO
     }
@@ -30,6 +43,7 @@ fun Application.module() {
     install(CORS) {
         anyHost()
         allowHeader("Content-Type")
+        allowCredentials = true
         allowNonSimpleContentTypes = true
     }
 

@@ -24,7 +24,9 @@ import org.example.shared.domain.GameConfig
 import org.example.shared.protocol.DrawRequest
 import org.example.shared.protocol.MoveRequest
 import org.example.shared.protocol.PlayerJoinRequest
-
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
+import io.ktor.server.sessions.get
 
 fun Application.configureRouting() {
 
@@ -39,7 +41,8 @@ fun Application.configureRouting() {
         }
 
         webSocket("/updates") {
-            val playerId = call.request.queryParameters["playerId"]?.toIntOrNull()
+            val session = call.sessions.get<UserSession>()
+            val playerId = session?.playerId ?: call.request.queryParameters["playerId"]?.toIntOrNull()
             val clientIp = call.request.origin.remoteHost
 
             Logger.info("🔌 Nowe połączenie WebSocket - IP: $clientIp, PlayerId: $playerId")
@@ -83,6 +86,7 @@ fun Application.configureRouting() {
             Logger.info("👤 Próba dołączenia gracza - IP: $clientIp, Nazwa: ${request.name}")
 
             val playerAdded = gameService.addPlayer(request.name)
+            call.sessions.set(UserSession(playerAdded.id))
             Logger.info("✅ Gracz dołączył - ID: ${playerAdded.id}, Nazwa: ${playerAdded.name}")
             call.respond(HttpStatusCode.OK, playerAdded)
         }
@@ -96,29 +100,44 @@ fun Application.configureRouting() {
 
 
         post("/move") {
+            val session = call.sessions.get<UserSession>()
             val request = call.receive<MoveRequest>()
-            Logger.info("🎮 Ruch gracza ${request.playerId}: $request")
+            
+            val activePlayerId = session?.playerId ?: request.playerId
+            val securedRequest = request.copy(playerId = activePlayerId)
+            
+            Logger.info("🎮 Ruch gracza ${securedRequest.playerId}: $securedRequest")
 
-            gameService.handleMove(request)
-            Logger.info("✅ Ruch gracza ${request.playerId} wykonany pomyślnie")
+            gameService.handleMove(securedRequest)
+            Logger.info("✅ Ruch gracza ${securedRequest.playerId} wykonany pomyślnie")
             call.respond(HttpStatusCode.OK)
         }
 
         post("/complete_chancellor") {
+            val session = call.sessions.get<UserSession>()
             val request = call.receive<MoveRequest>()
-            Logger.info("🎮 Kanclerz ${request.playerId} kończy turę")
+            
+            val activePlayerId = session?.playerId ?: request.playerId
+            val securedRequest = request.copy(playerId = activePlayerId)
+            
+            Logger.info("🎮 Kanclerz ${securedRequest.playerId} kończy turę")
 
-            gameService.completeChancellorMove(request)
-            Logger.info("✅ Tura kanclerza ${request.playerId} zakończona")
+            gameService.completeChancellorMove(securedRequest)
+            Logger.info("✅ Tura kanclerza ${securedRequest.playerId} zakończona")
             call.respond(HttpStatusCode.OK)
         }
 
         post("/drawCardForChancellor") {
+            val session = call.sessions.get<UserSession>()
             val request = call.receive<DrawRequest>()
-            Logger.info("🎴 Kanclerz ${request.playerId} dobiera karty")
+            
+            val activePlayerId = session?.playerId ?: request.playerId
+            val securedRequest = request.copy(playerId = activePlayerId)
+            
+            Logger.info("🎴 Kanclerz ${securedRequest.playerId} dobiera karty")
 
-            val hand = gameService.drawCardsForChancellor(request)
-            Logger.info("✅ Kanclerz ${request.playerId} dobrał ${hand.size} kart")
+            val hand = gameService.drawCardsForChancellor(securedRequest)
+            Logger.info("✅ Kanclerz ${securedRequest.playerId} dobrał ${hand.size} kart")
             call.respond(HttpStatusCode.OK, hand)
         }
 
