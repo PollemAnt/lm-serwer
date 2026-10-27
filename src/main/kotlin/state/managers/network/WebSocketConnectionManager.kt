@@ -10,12 +10,17 @@ import java.util.concurrent.ConcurrentHashMap
 interface ConnectionManager {
     suspend fun broadcastEvent(event: ServerEvent)
     suspend fun sendToPlayer(playerId: Int, event: ServerEvent)
+    fun getActivePlayerIds(): Set<Int>
 }
 
 class WebSocketConnectionManager : ConnectionManager {
 
     private val json = JsonConfig.json
     private val connections = ConcurrentHashMap<Int, WebSocketSession>()
+    
+    override fun getActivePlayerIds(): Set<Int> {
+        return connections.keys
+    }
 
     fun addConnection(playerId : Int, session: WebSocketSession) {
         connections[playerId] = session

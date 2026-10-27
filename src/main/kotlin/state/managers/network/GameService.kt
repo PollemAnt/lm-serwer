@@ -88,9 +88,26 @@ class GameService(
     }
 
     private suspend fun broadcastSnapshot() {
-        connectionManager.broadcastEvent(
-            GameSnapshotEvent(gameState.getState())
-        )
+        val fullState = gameState.getState()
+        val hiddenDeck = List(fullState.cards.size) { 
+            Card(-1, 0, CardType.GUARD, "Karta", "Rewers")
+        }
+        val activeIds = connectionManager.getActivePlayerIds()
+        
+        activeIds.forEach { playerId ->
+            val sanitizedPlayers = fullState.players.map { player ->
+                if (player.id == playerId) {
+                    player
+                } else {
+                    player.copy(hand = emptyList())
+                }
+            }
+            val sanitizedState = fullState.copy(
+                players = sanitizedPlayers,
+                cards = hiddenDeck
+            )
+            connectionManager.sendToPlayer(playerId, GameSnapshotEvent(sanitizedState))
+        }
     }
 
     private suspend fun handleRoundEnd(result: MoveResult.Success) {
@@ -128,8 +145,11 @@ class GameService(
     suspend fun getPlayer(playerId: Int?): Player = gameMutex.withLock {
         requireNotNull(playerId) { Strings.get("error.invalid_player_id") }
 
-        return gameState.getPlayerById(playerId)
+        val player = gameState.getPlayerById(playerId)
             ?: throw GameException(Strings.get("error.player_not_found"))
+            
+        // Ze względów bezpieczeństwa nigdy nie zwracamy kart gracza przez ten otwarty endpoint
+        return player.copy(hand = emptyList())
     }
 
     suspend fun drawCardsForChancellor(request: DrawRequest): List<Card> = gameMutex.withLock {
@@ -147,8 +167,22 @@ class GameService(
         return gameState.getGameConfig()
     }
 
-    suspend fun getState(): GameSnapshot = gameMutex.withLock {
-        return gameState.getState()
+    suspend fun getSanitizedState(requestingPlayerId: Int?): GameSnapshot = gameMutex.withLock {
+        val fullState = gameState.getState()
+        val hiddenDeck = List(fullState.cards.size) { 
+            Card(-1, 0, CardType.GUARD, "Karta", "Rewers")
+        }
+        val sanitizedPlayers = fullState.players.map { player ->
+            if (player.id == requestingPlayerId) {
+                player
+            } else {
+                player.copy(hand = emptyList())
+            }
+        }
+        return fullState.copy(
+            players = sanitizedPlayers,
+            cards = hiddenDeck
+        )
     }
     
     suspend fun resetGame() = gameMutex.withLock {
@@ -160,11 +194,16 @@ class GameService(
         result: MoveResult.Success,
         card: Card? = null,
     ) {
+        val sanitizedFeedback = when (val fb = result.feedback) {
+            is CardPlayedFeedback.PriestPlayed -> fb.copy(revealedCardNumber = -1)
+            else -> fb
+        }
+
         val event = CardPlayedEvent(
             playerId = request.playerId,
             card = card ?: request.card,
             targetPlayerId = request.targetPlayerId ?: -1,
-            feedback = result.feedback
+            feedback = sanitizedFeedback
         )
         Logger.info("📢 Rozsyłanie CardPlayedEvent: Gracz ${request.playerId} zagrał ${event.card.name}")
         connectionManager.broadcastEvent(event)
@@ -173,9 +212,10 @@ class GameService(
     private suspend fun broadcastPlayerJoin(
         playerAdded: Player
     ) {
+        val sanitizedPlayer = playerAdded.copy(hand = emptyList())
         connectionManager.broadcastEvent(
             PlayerJoinEvent(
-                player = playerAdded
+                player = sanitizedPlayer
             )
         )
     }

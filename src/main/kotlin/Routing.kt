@@ -88,8 +88,9 @@ fun Application.configureRouting() {
         }
 
         get("/state") {
-            Logger.debug("📊 Żądanie stanu gry od ${call.request.origin.remoteHost}")
-            val json = Json.encodeToString(gameService.getState())
+            val playerId = call.request.queryParameters["playerId"]?.toIntOrNull()
+            Logger.debug("📊 Żądanie stanu gry od ${call.request.origin.remoteHost}, playerId: $playerId")
+            val json = Json.encodeToString(gameService.getSanitizedState(playerId))
             call.respondText(json, ContentType.Application.Json)
         }
 
