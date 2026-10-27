@@ -22,6 +22,7 @@ import org.example.shared.protocol.PriestRevealEvent
 import org.example.shared.protocol.RoundEndedEvent
 import org.example.shared.protocol.TurnChangedEvent
 import kotlin.time.Duration.Companion.milliseconds
+import com.example.ValidationException
 
 class GameException(message: String) : RuntimeException(message)
 
@@ -33,8 +34,8 @@ class GameService(
     private val gameMutex = Mutex()
 
     suspend fun addPlayer(playerName: String): Player = gameMutex.withLock {
-        require(playerName.isNotBlank()) { "Player name cannot be blank" }
-        require(playerName.length <= 20) { "Player name too long" }
+        if(playerName.isBlank()) throw ValidationException("Player name cannot be blank")
+        if(playerName.length > 20) throw ValidationException("Player name too long")
 
         val playerAdded = gameState.addPlayer(playerName)
 

@@ -14,9 +14,11 @@ import io.ktor.server.response.respond
 import io.ktor.server.websocket.WebSockets
 import kotlinx.serialization.Serializable
 import org.slf4j.event.Level as SLF4JLevel
-
 import io.ktor.server.sessions.Sessions
 import io.ktor.server.sessions.cookie
+import org.koin.ktor.plugin.Koin
+import org.koin.logger.slf4jLogger
+import com.example.di.appModule
 
 @Serializable
 data class ErrorResponse(
@@ -28,7 +30,16 @@ data class UserSession(val playerId: Int)
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
+class AuthenticationException(message: String) : RuntimeException(message)
+class AuthorizationException(message: String) : RuntimeException(message)
+class ValidationException(message: String) : RuntimeException(message)
+
 fun Application.module() {
+    install(Koin) {
+        slf4jLogger()
+        modules(appModule)
+    }
+
     install(Sessions) {
         cookie<UserSession>("USER_SESSION") {
             cookie.path = "/"
@@ -57,6 +68,27 @@ fun Application.module() {
             call.respond(
                 HttpStatusCode.BadRequest,
                 ErrorResponse(cause.message ?: "Błąd gry")
+            )
+        }
+        
+        exception<AuthenticationException> { call, cause ->
+            call.respond(
+                HttpStatusCode.Unauthorized,
+                ErrorResponse(cause.message ?: "Nie zalogowano")
+            )
+        }
+        
+        exception<AuthorizationException> { call, cause ->
+            call.respond(
+                HttpStatusCode.Forbidden,
+                ErrorResponse(cause.message ?: "Odmowa dostępu")
+            )
+        }
+        
+        exception<ValidationException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse(cause.message ?: "Błąd walidacji danych")
             )
         }
 

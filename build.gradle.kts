@@ -36,6 +36,8 @@ dependencies {
 
     
     implementation(libs.logback.classic)
+    implementation(libs.koin.ktor)
+    implementation(libs.koin.logger.slf4j)
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
