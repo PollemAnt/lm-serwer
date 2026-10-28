@@ -24,6 +24,7 @@ import org.example.shared.domain.GameConfig
 import org.example.shared.protocol.DrawRequest
 import org.example.shared.protocol.MoveRequest
 import org.example.shared.protocol.PlayerJoinRequest
+import org.example.shared.protocol.PlayerRejoinRequest
 import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import io.ktor.server.sessions.get
@@ -93,6 +94,18 @@ fun Application.configureRouting() {
                 call.sessions.set(UserSession(playerAdded.id))
                 Logger.info("✅ Gracz dołączył - ID: ${playerAdded.id}, Nazwa: ${playerAdded.name}")
                 call.respond(HttpStatusCode.OK, playerAdded)
+            }
+            
+            post("/rejoin") {
+                val request = call.receive<PlayerRejoinRequest>()
+                val clientIp = call.request.origin.remoteHost
+                
+                Logger.info("🔄 Próba wznowienia gry - IP: $clientIp, PlayerId: ${request.playerId}")
+                
+                val player = gameService.getPlayer(request.playerId)
+                call.sessions.set(UserSession(player.id))
+                Logger.info("✅ Gracz wznowił połączenie - ID: ${player.id}")
+                call.respond(HttpStatusCode.OK, player)
             }
     
             get("/state") {
