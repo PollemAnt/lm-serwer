@@ -1,12 +1,14 @@
 package com.example.state
 
 import com.example.Strings
-import com.example.models.Card
-import com.example.models.GameConfig
-import com.example.models.GameSnapshot
-import com.example.models.MoveRequest
-import com.example.models.MoveResult
-import com.example.models.Player
+import com.example.logger.Logger
+import org.example.shared.domain.Card
+import org.example.shared.protocol.CardPlayedFeedback
+import org.example.shared.domain.GameConfig
+import org.example.shared.domain.GameSnapshot
+import org.example.shared.protocol.MoveRequest
+import org.example.shared.protocol.MoveResult
+import org.example.shared.domain.Player
 import com.example.state.effects.CardEffectResolver
 import com.example.state.handler.ChancellorHandler
 import com.example.state.managers.DeckManager
@@ -45,7 +47,12 @@ class GameState {
         if (playerManager.count < gameConfig.maxPlayers) {
             player = playerManager.addPlayer(name)
         }
-        if (playerManager.count == gameConfig.maxPlayers) startGame()
+        Logger.debug("👤 Dodawanie gracza $name count: ${playerManager.count} maxPlayers:${gameConfig.maxPlayers}")
+        if (playerManager.count == gameConfig.maxPlayers) {
+            startGame()
+
+            return player?.id?.let { playerManager.findById(it) }
+        }
         return player
     }
 
@@ -53,6 +60,7 @@ class GameState {
     fun startGameForTest() = startGame()
 
     private fun startGame() {
+        Logger.debug(" startGame ${playerManager.count}  maxPlayers:${gameConfig.maxPlayers}")
         roundManager.prepareRound()
     }
 
@@ -81,11 +89,28 @@ class GameState {
             deckManager
         ).resolve(request)
 
+        if (feedback is CardPlayedFeedback.Standard && feedback.message == Strings.get("error.cannot_target_self")) {
+            // Revert changes if validation failed inside resolver (this is a bit hacky, but avoids duplicate validation logic)
+            // Actually, better to just return Error here so GameService doesn't broadcast anything.
+            playerManager.addCardToHand(player.id, request.card)
+            playerManager.removePlayedCard(player.id, request.card)
+            return MoveResult.Error(feedback.message)
+        }
+
         val isRoundEnded = roundManager.prepareNewRoundIfNeeded()
 
-        if (!isRoundEnded) {
-            turnManager.advanceTurn()
+        if (isRoundEnded) {
+            // Po rozdaniu nowej rundy potrzebujemy wysłać snapshot, żeby gracze widzieli nowe karty
+            return MoveResult.Success(
+                feedback = feedback,
+                messageToAll = Strings.format("game.player_move", player.name),
+                nextPlayerId = turnManager.getActivePlayerId() ?: 0,
+                isRoundEnded = isRoundEnded,
+                roundSummary = roundManager.getRoundSummary()
+            )
         }
+
+        turnManager.advanceTurn()
 
         return MoveResult.Success(
             feedback = feedback,
@@ -122,6 +147,15 @@ class GameState {
     fun getPlayerHandForPriest(playerId: Int, targetId: Int): List<Card>? {
         if (playerId != turnManager.getActivePlayerId()) return null
         return playerManager.getPlayerHand(targetId)
+    }
+
+    // For tests
+    fun setPlayerProtected(playerId: Int, isProtected: Boolean) {
+        playerManager.updatePlayer(playerId) { it.copy(isProtected = isProtected) }
+    }
+
+    fun setPlayerHand(playerId: Int, hand: List<Card>) {
+        playerManager.updatePlayer(playerId) { it.copy(hand = hand) }
     }
 }
 

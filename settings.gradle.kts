@@ -1,7 +1,24 @@
-rootProject.name = "lm-serwer"
-
-dependencyResolutionManagement {
+pluginManagement {
     repositories {
+        google()
         mavenCentral()
+        gradlePluginPortal()
     }
 }
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+    versionCatalogs {
+        create("libs") {
+            from(files("../gradle/libs.versions.toml"))
+        }
+    }
+}
+
+rootProject.name = "lm-serwer"
+include(":shared")
+project(":shared").projectDir = file("../shared")

@@ -1,21 +1,28 @@
 package com.example.state.managers.network
 
 import com.example.Strings
-import com.example.models.Card
-import com.example.models.CardPlayedEvent
-import com.example.models.DrawRequest
-import com.example.models.GameConfig
-import com.example.models.GameSnapshot
-import com.example.models.MoveRequest
-import com.example.models.MoveResult
-import com.example.models.Player
-import com.example.models.PlayerJoinEvent
-import com.example.models.PriestRequest
-import com.example.models.RoundEndedEvent
+import com.example.logger.Logger
 import com.example.state.GameState
 import kotlinx.coroutines.delay
-import state.managers.network.ConnectionManager
-
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.example.shared.domain.Card
+import org.example.shared.domain.CardType
+import org.example.shared.domain.GameConfig
+import org.example.shared.domain.GameSnapshot
+import org.example.shared.domain.Player
+import org.example.shared.protocol.CardPlayedEvent
+import org.example.shared.protocol.CardPlayedFeedback
+import org.example.shared.protocol.DrawRequest
+import org.example.shared.protocol.GameSnapshotEvent
+import org.example.shared.protocol.MoveRequest
+import org.example.shared.protocol.MoveResult
+import org.example.shared.protocol.PlayerJoinEvent
+import org.example.shared.protocol.PriestRevealEvent
+import org.example.shared.protocol.RoundEndedEvent
+import org.example.shared.protocol.TurnChangedEvent
+import kotlin.time.Duration.Companion.milliseconds
+import com.example.ValidationException
 
 class GameException(message: String) : RuntimeException(message)
 
@@ -23,17 +30,18 @@ class GameService(
     private val gameState: GameState,
     private val connectionManager: ConnectionManager
 ) {
+    
+    private val gameMutex = Mutex()
 
-    suspend fun addPlayer(playerName: String): Player {
-
-        require(playerName.isNotBlank()) { "Player name cannot be blank" }
-        require(playerName.length <= 20) { "Player name too long" }
+    suspend fun addPlayer(playerName: String): Player = gameMutex.withLock {
+        if(playerName.isBlank()) throw ValidationException("Player name cannot be blank")
+        if(playerName.length > 20) throw ValidationException("Player name too long")
 
         val playerAdded = gameState.addPlayer(playerName)
 
         if (playerAdded != null) {
             broadcastPlayerJoin(playerAdded)
-
+            broadcastSnapshot()
         } else {
             throw GameException(Strings.get("lobby.max_players_reached"))
         }
@@ -41,25 +49,70 @@ class GameService(
         return playerAdded
     }
 
-    suspend fun handleMove(request: MoveRequest) {
-        when (val result = gameState.makeMove(request)) {
+    private suspend fun sendPrivateEvent(
+        playerId: Int,
+        event: PriestRevealEvent
+    ) {
+        connectionManager.sendToPlayer(playerId, event)
+    }
 
+    suspend fun handleMove(request: MoveRequest) = gameMutex.withLock {
+        when (val result = gameState.makeMove(request)) {
             is MoveResult.Success -> {
-                broadcastCardPlayed(request, result)
+                when (val feedback = result.feedback) {
+                    is CardPlayedFeedback.PriestPlayed -> {
+                        sendPrivateEvent(
+                            playerId = feedback.viewingPlayerId,
+                            event = PriestRevealEvent(
+                                targetPlayerId = feedback.targetPlayerId,
+                                revealedCardNumber = feedback.revealedCardNumber
+                            )
+                        )
+                        broadcastCardPlayed(request, result)
+                    }
+                    else -> {
+                        broadcastCardPlayed(request, result)
+                    }
+                }
+                broadcastSnapshot()
+                broadcastTurnChanged(result.nextPlayerId)
 
                 if (result.isRoundEnded) {
+                    broadcastSnapshot() // Wyślij nowe karty po zakończeniu rundy
                     handleRoundEnd(result)
                 }
             }
-
             is MoveResult.Error -> {
                 throw GameException(result.message)
             }
         }
     }
 
+    private suspend fun broadcastSnapshot() {
+        val fullState = gameState.getState()
+        val hiddenDeck = List(fullState.cards.size) { 
+            Card(-1, 0, CardType.GUARD, "Karta", "Rewers")
+        }
+        val activeIds = connectionManager.getActivePlayerIds()
+        
+        activeIds.forEach { playerId ->
+            val sanitizedPlayers = fullState.players.map { player ->
+                if (player.id == playerId) {
+                    player
+                } else {
+                    player.copy(hand = emptyList())
+                }
+            }
+            val sanitizedState = fullState.copy(
+                players = sanitizedPlayers,
+                cards = hiddenDeck
+            )
+            connectionManager.sendToPlayer(playerId, GameSnapshotEvent(sanitizedState))
+        }
+    }
+
     private suspend fun handleRoundEnd(result: MoveResult.Success) {
-        delay(1000)
+        delay(1000.milliseconds)
 
         val roundSummary = result.roundSummary
             ?: run {
@@ -69,70 +122,72 @@ class GameService(
         connectionManager.broadcastEvent(RoundEndedEvent(roundSummary))
     }
 
-    suspend fun completeChancellorMove(request: MoveRequest) {
+    suspend fun completeChancellorMove(request: MoveRequest) = gameMutex.withLock {
         when (val result = gameState.completeChancellorMove(request.playerId, request.card)) {
-
             is MoveResult.Success -> {
-
                 val chancellorCard = Card(
                     id = -1,
                     number = 6,
+                    cardType = CardType.CHANCELLOR,
                     name = Strings.get("card.chancellor"),
                     description = Strings.get("card.action.chancellor")
                 )
 
                 broadcastCardPlayed(request, result, chancellorCard)
-
+                broadcastSnapshot()
+                broadcastTurnChanged(result.nextPlayerId)
             }
-
             is MoveResult.Error -> {
                 throw GameException(result.message)
             }
         }
-
     }
 
-    fun getPlayer(playerId: Int?): Player {
+    suspend fun getPlayer(playerId: Int?): Player = gameMutex.withLock {
         requireNotNull(playerId) { Strings.get("error.invalid_player_id") }
 
-        return gameState.getPlayerById(playerId)
+        val player = gameState.getPlayerById(playerId)
             ?: throw GameException(Strings.get("error.player_not_found"))
+            
+        // Ze względów bezpieczeństwa nigdy nie zwracamy kart gracza przez ten otwarty endpoint
+        return player.copy(hand = emptyList())
     }
 
-    fun drawCardsForChancellor(request: DrawRequest): List<Card> {
+    suspend fun drawCardsForChancellor(request: DrawRequest): List<Card> = gameMutex.withLock {
         gameState.drawCardForChancellor(request.playerId, request.card)
-
-        val player = getPlayer(request.playerId)
-
+        val player = gameState.getPlayerById(request.playerId)
+            ?: throw GameException(Strings.get("error.player_not_found"))
         return player.hand
     }
 
-    fun getPlayerHand(
-        request: PriestRequest
-    ): List<Card> {
-
-        if (!gameState.playerExists(request.targetId)) {
-            throw GameException(Strings.get("error.player_not_found"))
-        }
-
-        val targetHand = gameState.getPlayerHandForPriest(
-            request.playerId,
-            request.targetId
-        ) ?: throw GameException(Strings.get("error.not_your_turn"))
-
-        return targetHand
-    }
-
-    fun updateGameConfig(config: GameConfig) {
+    suspend fun updateGameConfig(config: GameConfig) = gameMutex.withLock {
         gameState.updateGameConfig(config)
     }
 
-    fun getGameConfig(): GameConfig {
+    suspend fun getGameConfig(): GameConfig = gameMutex.withLock {
         return gameState.getGameConfig()
     }
 
-    fun getState(): GameSnapshot {
-        return gameState.getState()
+    suspend fun getSanitizedState(requestingPlayerId: Int?): GameSnapshot = gameMutex.withLock {
+        val fullState = gameState.getState()
+        val hiddenDeck = List(fullState.cards.size) { 
+            Card(-1, 0, CardType.GUARD, "Karta", "Rewers")
+        }
+        val sanitizedPlayers = fullState.players.map { player ->
+            if (player.id == requestingPlayerId) {
+                player
+            } else {
+                player.copy(hand = emptyList())
+            }
+        }
+        return fullState.copy(
+            players = sanitizedPlayers,
+            cards = hiddenDeck
+        )
+    }
+    
+    suspend fun resetGame() = gameMutex.withLock {
+        gameState.resetGame()
     }
 
     private suspend fun broadcastCardPlayed(
@@ -140,24 +195,35 @@ class GameService(
         result: MoveResult.Success,
         card: Card? = null,
     ) {
-        connectionManager.broadcastEvent(
-            CardPlayedEvent(
-                playerId = request.playerId,
-                card = card ?: request.card,
-                targetPlayerId = request.targetPlayerId,
-                feedback = result.feedback
-            )
+        val sanitizedFeedback = when (val fb = result.feedback) {
+            is CardPlayedFeedback.PriestPlayed -> fb.copy(revealedCardNumber = -1)
+            else -> fb
+        }
+
+        val event = CardPlayedEvent(
+            playerId = request.playerId,
+            card = card ?: request.card,
+            targetPlayerId = request.targetPlayerId ?: -1,
+            feedback = sanitizedFeedback
         )
+        Logger.info("📢 Rozsyłanie CardPlayedEvent: Gracz ${request.playerId} zagrał ${event.card.name}")
+        connectionManager.broadcastEvent(event)
     }
 
     private suspend fun broadcastPlayerJoin(
         playerAdded: Player
     ) {
+        val sanitizedPlayer = playerAdded.copy(hand = emptyList())
         connectionManager.broadcastEvent(
             PlayerJoinEvent(
-                player = playerAdded
+                player = sanitizedPlayer
             )
         )
     }
-}
 
+    private suspend fun broadcastTurnChanged(nextPlayerId: Int) {
+        connectionManager.broadcastEvent(
+            TurnChangedEvent(nextPlayerId)
+        )
+    }
+}

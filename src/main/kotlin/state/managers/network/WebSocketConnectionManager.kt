@@ -1,47 +1,92 @@
-package state.managers.network
+package com.example.state.managers.network
 
-import com.example.models.GameEventBase
+import com.example.JsonConfig
+import com.example.logger.Logger
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.json.Json
+import org.example.shared.protocol.ServerEvent
+import java.util.concurrent.ConcurrentHashMap
 
 interface ConnectionManager {
-    suspend fun broadcastEvent(event: GameEventBase)
+    suspend fun broadcastEvent(event: ServerEvent)
+    suspend fun sendToPlayer(playerId: Int, event: ServerEvent)
+    fun getActivePlayerIds(): Set<Int>
 }
 
 class WebSocketConnectionManager : ConnectionManager {
 
-    private val connections = mutableSetOf<WebSocketSession>()
-    private val mutex = Mutex()
+    private val json = JsonConfig.json
+    private val connections = ConcurrentHashMap<Int, WebSocketSession>()
+    
+    override fun getActivePlayerIds(): Set<Int> {
+        return connections.keys
+    }
 
-    suspend fun addConnection(session: WebSocketSession) {
-        mutex.withLock {
-            connections.add(session)
+    fun addConnection(playerId : Int, session: WebSocketSession) {
+        connections[playerId] = session
+        Logger.info("🔌 WebSocket połączony - PlayerId: $playerId, Aktywne połączenia: ${connections.size}")
+    }
+
+    fun removeConnection(playerId : Int, session: WebSocketSession) {
+        if (connections[playerId] === session) {
+            connections.remove(playerId)
+            Logger.info("🔌 WebSocket rozłączony - PlayerId: $playerId, Aktywne połączenia: ${connections.size}")
+        } else {
+            Logger.debug("🔌 Pominięto usuwanie WebSocket dla PlayerId: $playerId - sesja została już zastąpiona")
         }
     }
 
-    suspend fun removeConnection(session: WebSocketSession) {
-        mutex.withLock {
-            connections.remove(session)
+    override suspend fun broadcastEvent(event: ServerEvent) {
+        val jsonString = try {
+            json.encodeToString(event)
+        } catch (e: Exception) {
+            Logger.error("❌ Błąd serializacji eventu ${event::class.simpleName}: ${e.message}", e)
+            return
         }
-    }
 
-    override suspend fun broadcastEvent(event: GameEventBase) {
-        val json = Json.encodeToString(event)
+        val snapshot = connections.values.toList()
 
-        val snapshot = mutex.withLock {
-            connections.toList()
-        }
+        Logger.debug("📡 Broadcast event: ${event::class.simpleName} do ${snapshot.size} graczy. JSON: $jsonString")
+
+        var successCount = 0
+        var errorCount = 0
 
         snapshot.forEach { session ->
             try {
-                session.send(Frame.Text(json))
+                session.send(Frame.Text(jsonString))
+                successCount++
             } catch (e: Exception) {
-                println("WS send error, removing session: $e")
-                removeConnection(session)
+                println("WS send error,  $e")
+                errorCount++
+                Logger.error("❌ Błąd wysyłki WebSocket broadcast: ${e.message}", e)
             }
         }
+
+        if (errorCount > 0) {
+            Logger.warn("⚠️ Broadcast: $successCount sukcesów, $errorCount błędów")
+        } else if (successCount > 0) {
+            Logger.debug("✅ Broadcast: $successCount wiadomości wysłanych")
+        }
+    }
+
+    override suspend fun sendToPlayer(playerId: Int, event: ServerEvent) {
+        val session = connections[playerId]
+
+        if (session != null) {
+            try {
+                val jsonString = json.encodeToString(event)
+                session.send(Frame.Text(jsonString))
+                Logger.debug("📨 Prywatna wiadomość do gracza $playerId: ${event::class.simpleName}")
+                Logger.debug("📦 Dane: ${jsonString.take(200)}${if (jsonString.length > 200) "..." else ""}")
+
+            } catch (e: Exception) {
+                println("WS private send error: $e")
+                Logger.error("❌ Błąd wysyłki prywatnej do gracza $playerId: ${e.message}", e)
+            }
+        }
+    }
+
+    suspend fun getConnectionStats(): Map<Int, Boolean> {
+        return connections.mapValues { true }.toMap()
     }
 }
